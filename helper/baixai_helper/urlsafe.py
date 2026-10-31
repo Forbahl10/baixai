@@ -130,13 +130,29 @@ class _PinnedHTTP(http.client.HTTPConnection):
 
 class _PinnedHTTPS(http.client.HTTPSConnection):
     def __init__(self, host, port, ip, timeout):
-        self._ctx = ssl.create_default_context()
+        self._ctx = _ssl_context()
         super().__init__(host, port, timeout=timeout, context=self._ctx)
         self._ip = ip
 
     def connect(self):
         sock = socket.create_connection((self._ip, self.port), self.timeout)
         self.sock = self._ctx.wrap_socket(sock, server_hostname=self.host)
+
+
+def _ssl_context() -> ssl.SSLContext:
+    """Contexto TLS que confia nos certificados do sistema E no pacote do certifi (embutido no executável).
+
+    Um executável empacotado pode ter sido construído com um Python cujos certificados ficam num caminho que não existe
+    na máquina do usuário; sem o certifi, todo HTTPS falharia ali com "Falha de conexão".
+    """
+    ctx = ssl.create_default_context()
+    try:
+        import certifi
+
+        ctx.load_verify_locations(cafile=certifi.where())
+    except Exception:  # certifi ausente ou ilegível: segue só com os certificados do sistema
+        pass
+    return ctx
 
 
 class SafeResponse:

@@ -4,7 +4,7 @@ Este pacote contém o executável do aplicativo auxiliar, construído com PyInst
 
 | Componente | Versão | Licença | Onde obter o código-fonte |
 |---|---|---|---|
-| Baixaí (código próprio) | 0.1.0 | GPL-2.0-ou-posterior | arquivo `baixai-source-0.1.0.tar.gz` distribuído junto deste pacote |
+| Baixaí (código próprio) | 0.1.1 | GPL-2.0-ou-posterior | arquivo `baixai-source-0.1.1.tar.gz` distribuído junto deste pacote |
 | yt-dlp | 2026.10.26 | Unlicense | https://github.com/yt-dlp/yt-dlp (tag 2026.10.26) |
 | gallery-dl | 1.32.18 | GPL-2.0-only | pasta `sources/` deste pacote; https://github.com/mikf/gallery-dl |
 | mutagen | 1.48.1 | GPL-2.0-ou-posterior | pasta `sources/` deste pacote |

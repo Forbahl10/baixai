@@ -1,4 +1,6 @@
-## Baixaí v0.1.0 — pré-lançamento
+## Baixaí v0.1.1 — pré-lançamento
+
+> **Esta versão substitui a v0.1.0**, cujo instalador não conseguia baixar o FFmpeg e o Deno (e links diretos por HTTPS) em computadores de usuários: faltava o pacote de certificados TLS dentro do executável. Se você instalou a v0.1.0, rode o comando de instalação de novo.
 
 Baixe vídeos, áudios e imagens de um link, direto do **terminal**, no seu computador. Sem servidor, sem conta, sem telemetria.
 
@@ -25,12 +27,12 @@ baixai --help
 
 | Arquivo | Para quê |
 |---|---|
-| `baixai-helper-0.1.0-macos-arm64.tar.gz` | macOS Apple Silicon (M1 ou mais novo) |
-| `baixai-helper-0.1.0-macos-x86_64.tar.gz` | macOS Intel |
-| `baixai-helper-0.1.0-windows-x86_64.zip` | Windows 10/11 |
-| `baixai-helper-0.1.0-linux-x86_64.tar.gz` | Linux x86_64 |
-| `baixai-extension-0.1.0*.zip` | Extensão do Chrome (opcional, experimental, não testada em Chrome real) |
-| `baixai-source-0.1.0.tar.gz` | Código-fonte |
+| `baixai-helper-0.1.1-macos-arm64.tar.gz` | macOS Apple Silicon (M1 ou mais novo) |
+| `baixai-helper-0.1.1-macos-x86_64.tar.gz` | macOS Intel |
+| `baixai-helper-0.1.1-windows-x86_64.zip` | Windows 10/11 |
+| `baixai-helper-0.1.1-linux-x86_64.tar.gz` | Linux x86_64 |
+| `baixai-extension-0.1.1*.zip` | Extensão do Chrome (opcional, experimental, não testada em Chrome real) |
+| `baixai-source-0.1.1.tar.gz` | Código-fonte |
 | `SHA256SUMS.txt` | Checksums de todos os arquivos |
 
 Você também pode baixar o pacote do seu sistema, extrair e rodar `./install.sh` (macOS/Linux) ou `instalar.bat` (Windows).
@@ -43,4 +45,4 @@ Você também pode baixar o pacote do seu sistema, extrair e rodar `./install.sh
 - Baixe apenas conteúdo **próprio, autorizado ou permitido**. Projeto independente, sem parceria com nenhuma plataforma.
 
 ### Licenças
-**GPL-2.0-ou-posterior**. FFmpeg (GPL-3.0) e Deno (MIT) não vão no pacote: são baixados na instalação, com a sua confirmação. Avisos de terceiros em `THIRD_PARTY_NOTICES.md` e fontes em `baixai-source-0.1.0.tar.gz`.
+**GPL-2.0-ou-posterior**. FFmpeg (GPL-3.0) e Deno (MIT) não vão no pacote: são baixados na instalação, com a sua confirmação. Avisos de terceiros em `THIRD_PARTY_NOTICES.md` e fontes em `baixai-source-0.1.1.tar.gz`.

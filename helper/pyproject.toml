@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "baixai-helper"
-version = "0.1.0"
+version = "0.1.1"
 description = "Baixaí — aplicativo auxiliar local (Native Messaging) para baixar vídeos, áudios e imagens"
 requires-python = ">=3.11"
 license = { text = "GPL-2.0-or-later" }
-dependencies = ["yt-dlp[default]", "gallery-dl", "Pillow"]
+dependencies = ["yt-dlp[default]", "gallery-dl", "Pillow", "certifi"]
 
 [project.optional-dependencies]
 dev = ["pytest", "pyinstaller"]

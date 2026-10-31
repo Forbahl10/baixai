@@ -3,6 +3,7 @@ import socket
 import pytest
 
 from baixai_helper.errors import BaixaiError
+from baixai_helper import urlsafe
 from baixai_helper.urlsafe import validate_url
 
 
@@ -80,3 +81,13 @@ def test_redirecionamento_para_rede_local_e_bloqueado(monkeypatch):
         urlsafe.safe_open(f"http://127.0.0.1:{srv.server_address[1]}/x")
     assert e.value.code == "blocked_host"
     srv.shutdown()
+
+
+def test_tls_confia_no_certifi_mesmo_sem_certificados_do_sistema(monkeypatch):
+    """Regressão: pacote construído na CI não achava certificados na máquina do usuário e todo HTTPS falhava."""
+    import ssl
+
+    monkeypatch.setattr(urlsafe.ssl, "create_default_context", lambda *a, **k: ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT))  # contexto vazio
+    ctx = urlsafe._ssl_context()
+    assert ctx.cert_store_stats()["x509_ca"] >= 50
+    assert ctx.verify_mode == ssl.CERT_REQUIRED and ctx.check_hostname

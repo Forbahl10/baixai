@@ -152,7 +152,7 @@ def cmd_tools(args) -> int:
             try:
                 deps.install(name, say=lambda m: print(m, file=sys.stderr, flush=True), force=args.force)
             except BaixaiError as e:
-                print(f"Erro ({name}): {e.message}", file=sys.stderr)
+                print(f"Erro ({name}): {e.message}" + (f" [{e.detail}]" if getattr(e, "detail", None) else ""), file=sys.stderr)
                 rc = 1
         return rc
     svc = Service()

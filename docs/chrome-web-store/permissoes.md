@@ -1,6 +1,6 @@
 # Lista de permissões e justificativas
 
-`manifest.json` (versão 0.1.0):
+`manifest.json` (versão 0.1.1):
 
 | Permissão | Por que é necessária | Quando é usada |
 |---|---|---|
