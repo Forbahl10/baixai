@@ -128,9 +128,11 @@ def test_origem_nao_autorizada_e_recusada(tmp_path):
     h = HostProc(tmp_path, origin="chrome-extension://" + "z" * 32 + "/")
     h.p.wait(15)
     assert h.p.returncode == 2
-    h2 = HostProc(tmp_path, origin="https://evil.example/")
+    # Qualquer outro primeiro argumento nunca abre uma sessão de Native Messaging: cai na linha de comando, que recusa o esquema.
+    h2 = HostProc(tmp_path, origin="moz-extension://" + "a" * 32 + "/")
     h2.p.wait(15)
-    assert h2.p.returncode == 2
+    assert h2.p.returncode != 0
+    assert h2.p.stdout.read(4) == b""  # nenhuma mensagem enquadrada foi enviada
 
 
 def test_mensagens_invalidas_recebem_erro_estruturado(host):

@@ -67,25 +67,11 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with: { python-version: "3.12" }
-      - run: python -m pip install -e "helper[dev]" pillow
+      - run: python -m pip install -e "helper[dev]"
       - name: Empacotar (PyInstaller)
         run: python scripts/package_helper.py
-      - name: Extrair o pacote gerado
-        shell: python
-        run: |
-          import glob, tarfile, zipfile, pathlib
-          pathlib.Path("smoke").mkdir(exist_ok=True)
-          for f in glob.glob("dist/baixai-helper-*"):
-              if f.endswith(".zip"):
-                  zipfile.ZipFile(f).extractall("smoke")
-              elif f.endswith(".tar.gz"):
-                  tarfile.open(f).extractall("smoke")
-      - name: Teste de fumaça do pacote (instala, simula o Chrome, baixa, converte, desinstala)
-        shell: python
-        run: |
-          import glob, subprocess, sys
-          pkg = glob.glob("smoke/baixai-helper-*")[0]
-          sys.exit(subprocess.call([sys.executable, "scripts/smoke_package.py", pkg]))
+      - name: Teste de fumaça do pacote (get.sh/get.ps1, FFmpeg e Deno reais, downloads, desinstalação)
+        run: python scripts/smoke_package.py dist
       - uses: actions/upload-artifact@v5
         with:
           name: helper-${{ matrix.label }}

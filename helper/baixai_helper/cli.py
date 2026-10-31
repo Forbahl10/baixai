@@ -31,9 +31,7 @@ def cmd_doctor(args) -> int:
         problems.append("FFmpeg ausente (MP3 e combinação de faixas indisponíveis)")
     if not st["js_runtime"]["ok"]:
         problems.append("Sem Deno/Node 22+ (alguns formatos do YouTube podem faltar)")
-    if not host:
-        problems.append("host Native Messaging não instalado")
-    elif not all(h.get("valid") and h.get("path_exists") for h in host):
+    if host and not all(h.get("valid") and h.get("path_exists") for h in host):
         problems.append("manifesto do host inválido ou aponta para um executável inexistente")
     if getattr(args, "json", False):
         _print({**info, "problems": problems})
@@ -50,9 +48,9 @@ def cmd_doctor(args) -> int:
     rt = st["js_runtime"]
     line(rt["ok"], f"Runtime JS: {rt['name']} {rt['version']}" if rt["ok"] else "Runtime JS (Deno ou Node 22+): não encontrado")
     for h in host:
-        line(bool(h.get("valid") and h.get("path_exists")), f"Host Native Messaging ({h['browser']}): {h.get('manifest')}")
+        line(bool(h.get("valid") and h.get("path_exists")), f"Extensão do Chrome ({h['browser']}): {h.get('manifest')}")
     if not host:
-        line(False, "Host Native Messaging: não registrado")
+        print("  [--] Extensão do Chrome: não conectada (opcional; o terminal funciona sem ela)")
     print("\nProblemas:" if problems else "\nTudo certo.", *("- " + p for p in problems), sep="\n")
     return 0 if not problems else 1
 
@@ -134,8 +132,29 @@ def cmd_uninstall(args) -> int:
 
 
 def cmd_tools(args) -> int:
+    from . import deps
     from .service import Service
 
+    if args.action in ("install-ffmpeg", "install-deno", "install-deps"):
+        names = ("ffmpeg", "deno") if args.action == "install-deps" else (args.action.split("-", 1)[1],)
+        if args.if_missing:  # só o que ainda não existe no sistema (PATH incluído)
+            st = Service().tools.status(True)
+            have = {"ffmpeg": st["ffmpeg"]["ok"], "deno": st["js_runtime"]["ok"]}
+            names = tuple(n for n in names if not have[n])
+            if not names:
+                print("FFmpeg e runtime JavaScript já estão disponíveis.", file=sys.stderr)
+        if args.dry_run:  # não baixa nada: sai com 1 se algo ainda faltar
+            if names:
+                print("Faltam: " + ", ".join(names), file=sys.stderr)
+            return 1 if names else 0
+        rc = 0
+        for name in names:
+            try:
+                deps.install(name, say=lambda m: print(m, file=sys.stderr, flush=True), force=args.force)
+            except BaixaiError as e:
+                print(f"Erro ({name}): {e.message}", file=sys.stderr)
+                rc = 1
+        return rc
     svc = Service()
     if args.action == "status":
         _print(svc.tools.status(True))
@@ -147,9 +166,9 @@ def cmd_tools(args) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="baixai-helper", description=f"{APP_NAME} — aplicativo auxiliar local")
+    p = argparse.ArgumentParser(prog="baixai", description=f"{APP_NAME} — aplicativo auxiliar local")
     p.add_argument("--version", action="version", version=f"{APP_NAME} {__version__}")
-    sub = p.add_subparsers(dest="cmd", required=True)
+    sub = p.add_subparsers(dest="cmd", required=True, metavar="comando")
     dd_ = sub.add_parser("doctor", help="diagnóstico"); dd_.add_argument("--json", action="store_true"); dd_.set_defaults(fn=cmd_doctor)
     a = sub.add_parser("analyze", help="analisa um link"); a.add_argument("url"); a.set_defaults(fn=cmd_analyze)
     d = sub.add_parser("download", help="baixa um link usando a fila (teste fora do Chrome)")
@@ -166,11 +185,60 @@ def build_parser() -> argparse.ArgumentParser:
     u = sub.add_parser("uninstall-host", help="remove o host Native Messaging")
     u.add_argument("--browser", action="append", choices=list(install_host.BROWSERS)); u.add_argument("--purge-data", action="store_true")
     u.set_defaults(fn=cmd_uninstall)
-    t = sub.add_parser("tools", help="versões e atualização explícita"); t.add_argument("action", choices=["status", "check", "update-ytdlp"]); t.set_defaults(fn=cmd_tools)
+    t = sub.add_parser("tools", help="versões, atualização e instalação de FFmpeg/Deno")
+    t.add_argument("action", choices=["status", "check", "update-ytdlp", "install-ffmpeg", "install-deno", "install-deps"])
+    t.add_argument("--force", action="store_true", help="baixa de novo mesmo se já estiver instalado")
+    t.add_argument("--if-missing", action="store_true", help="instala só o que não for encontrado no sistema")
+    t.add_argument("--dry-run", action="store_true", help="não baixa nada; sai com código 1 se algo estiver faltando"); t.set_defaults(fn=cmd_tools)
+    b = sub.add_parser("baixar", help="baixa um ou mais links (é o comando padrão: baixai \"LINK\")", description="Baixa vídeo (MP4), áudio (MP3) ou imagens de um link.")
+    b.add_argument("urls", nargs="+", metavar="LINK", help="coloque o link entre aspas")
+    g = b.add_mutually_exclusive_group()
+    g.add_argument("-a", "--audio", action="store_true", help="só o áudio (MP3)")
+    g.add_argument("-i", "--imagem", action="store_true", help="imagens (posts de fotos, galerias)")
+    b.add_argument("-q", "--qualidade", type=int, metavar="ALTURA", help="altura máxima do vídeo, ex.: 720 (padrão: 1080)")
+    b.add_argument("-o", "--pasta", metavar="PASTA", help="pasta de destino só desta vez (padrão: Downloads/Baixai)")
+    b.add_argument("--bitrate", type=int, metavar="KBPS", help="qualidade do MP3 (padrão: 192)")
+    b.add_argument("--original", action="store_true", help="mantém o formato original (sem converter para MP4/MP3/JPEG/PNG)")
+    b.add_argument("--formato-imagem", choices=["original", "jpeg", "png"], help="converte as imagens")
+    b.add_argument("--tudo", action="store_true", help="em listas e galerias grandes, baixa tudo sem perguntar")
+    b.add_argument("--itens", metavar="1,3,5", help="em listas e galerias, só estes números")
+    b.add_argument("--detalhes", action="store_true", help="mostra o detalhe técnico quando falhar")
+    b.set_defaults(fn=cmd_baixar)
     return p
 
 
+def cmd_baixar(args) -> int:
+    from . import terminal
+
+    return terminal.run(args)
+
+
+SUBCOMMANDS = {"doctor", "analyze", "download", "queue", "install-host", "uninstall-host", "tools", "baixar"}
+USAGE = """Baixaí — baixe vídeos, áudios e imagens pelo terminal.
+
+  baixai "LINK"                 vídeo em MP4 (até 1080p)
+  baixai -a "LINK"              só o áudio, em MP3
+  baixai -i "LINK"              imagens de um post ou galeria
+  baixai -q 720 "LINK"          vídeo de no máximo 720p
+  baixai -o ~/Videos "LINK"     escolhe a pasta de destino
+
+Coloque sempre o link entre aspas. Os arquivos vão para a pasta Downloads/Baixai.
+Outros comandos: baixai doctor | baixai tools install-deps | baixai --help
+Baixe apenas conteúdo seu, autorizado ou permitido pelo autor e pelos termos da plataforma."""
+
+
 def main(argv: list[str] | None = None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    for stream in (sys.stdout, sys.stderr):  # saída redirecionada no Windows pode não aceitar acentos: nunca quebrar por isso
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, ValueError):
+            pass
+    if not argv:
+        print(USAGE)
+        return 0
+    if argv[0] not in SUBCOMMANDS and argv[0] not in ("-h", "--help", "--version"):
+        argv = ["baixar", *argv]  # baixai "LINK" == baixai baixar "LINK"
     args = build_parser().parse_args(argv)
     try:
         return args.fn(args)

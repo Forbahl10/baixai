@@ -1,5 +1,5 @@
 #!/bin/sh
-# Instala o aplicativo auxiliar do Baixaí para o usuário atual (macOS e Linux). Sem sudo.
+# Instala o Baixaí para o usuário atual (macOS e Linux). Sem sudo. Deixa o comando `baixai` pronto para uso no terminal.
 set -eu
 
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -8,84 +8,98 @@ case "$(uname -s)" in
   *) APP_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/baixai" ;;
 esac
 APP_DIR="$APP_ROOT/app"
-IDS=""; BROWSERS=""; FFMPEG_MODE="ask"
+BIN_DIR="$HOME/.local/bin"
+IDS=""; BROWSERS=""; DEPS="ask"; PATHMODE="ask"; WITH_EXT="no"
 
 usage() {
   cat <<EOF
-Uso: ./install.sh --extension-id ID [--extension-id ID2] [--browser chrome|chromium|edge|brave] [--with-ffmpeg|--no-ffmpeg]
+Uso: ./install.sh [--deps|--no-deps] [--no-path] [--with-extension | --extension-id ID ...]
 
-  --extension-id   ID da extensão (chrome://extensions, modo desenvolvedor). Repita para desenvolvimento e produção.
-  --browser        Navegadores a registrar (padrão: chrome). Pode repetir.
-  --with-ffmpeg    Baixa o FFmpeg (macOS arm64) sem perguntar.   --no-ffmpeg  Não oferece o FFmpeg.
+  --deps / --no-deps   Baixa (ou não) o FFmpeg e o Deno sem perguntar. Sem a opção, pergunta.
+  --no-path            Não mexe no PATH do seu shell (só mostra o que fazer).
+  --with-extension     Também registra o host da extensão do Chrome (ID de DEFAULT_EXTENSION_IDS).
+  --extension-id ID    Registra o host para este ID de extensão (pode repetir). --browser chrome|chromium|edge|brave.
 EOF
 }
 while [ $# -gt 0 ]; do
   case "$1" in
+    --deps) DEPS="yes"; shift ;;
+    --no-deps|--no-ffmpeg) DEPS="no"; shift ;;
+    --with-ffmpeg) DEPS="yes"; shift ;;
+    --no-path) PATHMODE="no"; shift ;;
+    --with-extension) WITH_EXT="yes"; shift ;;
     --extension-id) IDS="$IDS --extension-id $2"; shift 2 ;;
     --browser) BROWSERS="$BROWSERS --browser $2"; shift 2 ;;
-    --with-ffmpeg) FFMPEG_MODE="yes"; shift ;;
-    --no-ffmpeg) FFMPEG_MODE="no"; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Opção desconhecida: $1" >&2; usage >&2; exit 2 ;;
   esac
 done
-if [ -z "$IDS" ]; then
-  if [ -f "$HERE/DEFAULT_EXTENSION_IDS" ]; then
-    for i in $(cat "$HERE/DEFAULT_EXTENSION_IDS"); do IDS="$IDS --extension-id $i"; done
-    echo "Usando os IDs padrão de $HERE/DEFAULT_EXTENSION_IDS (extensão carregada descompactada)."
-  else
-    echo "Informe o ID da extensão com --extension-id." >&2; usage >&2; exit 2
-  fi
-fi
 [ -d "$HERE/baixai-helper" ] || { echo "Pasta baixai-helper/ não encontrada ao lado do instalador." >&2; exit 1; }
 
+ask() { # ask "pergunta" -> 0 se sim (Enter = sim). Sem terminal: não.
+  if ! ( : </dev/tty ) 2>/dev/null; then return 1; fi
+  printf '%s [S/n] ' "$1" >/dev/tty; read -r ANS </dev/tty || ANS="n"
+  case "$ANS" in n|N|nao|não|NAO|NÃO) return 1 ;; *) return 0 ;; esac
+}
+
 echo "==> Instalando o aplicativo em: $APP_DIR"
-mkdir -p "$APP_DIR"
+mkdir -p "$APP_DIR" "$BIN_DIR"
 rm -rf "$APP_DIR/baixai-helper"
 cp -R "$HERE/baixai-helper" "$APP_DIR/baixai-helper"
 HELPER="$APP_DIR/baixai-helper/baixai-helper"
 chmod +x "$HELPER"
 # Arquivos baixados pelo navegador vêm com quarentena do macOS; este instalador foi executado por você.
 [ "$(uname -s)" = "Darwin" ] && xattr -dr com.apple.quarantine "$APP_DIR/baixai-helper" 2>/dev/null || true
+cp "$HERE/uninstall.sh" "$APP_ROOT/desinstalar.sh" && chmod +x "$APP_ROOT/desinstalar.sh"
 
-echo "==> Registrando o host Native Messaging"
-# shellcheck disable=SC2086
-"$HELPER" install-host $IDS ${BROWSERS:---browser chrome} --exec "$HELPER"
+echo "==> Criando o comando: $BIN_DIR/baixai"
+printf '#!/bin/sh\nexec "%s" "$@"\n' "$HELPER" > "$BIN_DIR/baixai"
+chmod +x "$BIN_DIR/baixai"
 
-have_ffmpeg() { command -v ffmpeg >/dev/null 2>&1 || [ -x /opt/homebrew/bin/ffmpeg ] || [ -x /usr/local/bin/ffmpeg ] || [ -x "$APP_ROOT/bin/ffmpeg" ]; }
-FF_BASE="https://ffmpeg.martin-riedl.de/download/macos/arm64/1789931890_9.0.2"
-FF_SHA_FFMPEG="c8ed4c4e6978a03c485edbfe4e0a5dc2380f8a30bba5150531b31b094492d924"
-FF_SHA_FFPROBE="fcbe839537485eaee7a7a8bc5cbc0f90d53617e80943e8a5b2e31cb851197ea6"
-sha256() { if command -v shasum >/dev/null 2>&1; then shasum -a 256 "$1" | cut -d' ' -f1; else sha256sum "$1" | cut -d' ' -f1; fi; }
-
-if ! have_ffmpeg && [ "$FFMPEG_MODE" != "no" ]; then
-  echo "==> FFmpeg não encontrado. Ele é necessário para MP3 e para combinar vídeo e áudio."
-  if [ "$(uname -s)" = "Darwin" ] && [ "$(uname -m)" = "arm64" ]; then
-    ANS="n"
-    if [ "$FFMPEG_MODE" = "yes" ]; then ANS="s"; else
-      echo "    Posso baixar o build do FFmpeg 9.0.2 (ffmpeg.martin-riedl.de), licença GPL-3.0-ou-posterior,"
-      echo "    verificar o SHA-256 e guardá-lo em $APP_ROOT/bin (nada fora dessa pasta)."
-      printf "    Baixar agora? [s/N] "; read -r ANS || ANS="n"
-    fi
-    case "$ANS" in s|S|y|Y)
-      mkdir -p "$APP_ROOT/bin"; TMP=$(mktemp -d)
-      for pair in "ffmpeg:$FF_SHA_FFMPEG" "ffprobe:$FF_SHA_FFPROBE"; do
-        n=${pair%%:*}; want=${pair##*:}
-        curl -fsSL -o "$TMP/$n.zip" "$FF_BASE/$n.zip" || { echo "Falha ao baixar $n."; rm -rf "$TMP"; exit 1; }
-        [ "$(sha256 "$TMP/$n.zip")" = "$want" ] || { echo "SHA-256 de $n não confere; abortado."; rm -rf "$TMP"; exit 1; }
-        unzip -oq "$TMP/$n.zip" -d "$APP_ROOT/bin"; chmod +x "$APP_ROOT/bin/$n"
-        xattr -dr com.apple.quarantine "$APP_ROOT/bin/$n" 2>/dev/null || true
-      done
-      rm -rf "$TMP"; echo "    FFmpeg instalado em $APP_ROOT/bin" ;;
-    *) echo "    Ok, sem FFmpeg por enquanto." ;;
-    esac
-  else
-    echo "    Instale-o pelo gerenciador de pacotes: macOS (Homebrew): brew install ffmpeg · Debian/Ubuntu: sudo apt install ffmpeg · Fedora: sudo dnf install ffmpeg"
+ON_PATH="yes"
+case ":$PATH:" in *":$BIN_DIR:"*) ;; *) ON_PATH="no" ;; esac
+if [ "$ON_PATH" = "no" ]; then
+  case "$(basename "${SHELL:-sh}")" in
+    zsh) RC="$HOME/.zshrc" ;;
+    bash) if [ "$(uname -s)" = "Darwin" ]; then RC="$HOME/.bash_profile"; else RC="$HOME/.bashrc"; fi ;;
+    *) RC="" ;;
+  esac
+  if [ -n "$RC" ] && grep -q '# baixai$' "$RC" 2>/dev/null; then
+    ON_PATH="configured"
+  elif [ -n "$RC" ] && [ "$PATHMODE" != "no" ] && ask "==> Para usar só digitando 'baixai', posso acrescentar uma linha ao seu $RC (adiciona $BIN_DIR ao PATH). Pode?"; then
+    printf '\n# Baixaí (adicionado pelo instalador)\nexport PATH="$HOME/.local/bin:$PATH" # baixai\n' >> "$RC"
+    ON_PATH="configured"
+    echo "    ok: linha adicionada em $RC"
   fi
+fi
+
+# FFmpeg (MP3 e vídeo em alta qualidade) e Deno (YouTube): opcionais, verificados por SHA-256, guardados só na pasta do Baixaí.
+NEED_DEPS="no"
+case "$DEPS" in
+  yes) NEED_DEPS="yes" ;;
+  ask) if "$HELPER" tools install-deps --if-missing --dry-run >/dev/null 2>&1; then :; else
+         if ask "==> Falta o FFmpeg e/ou o Deno (MP3, vídeo em alta qualidade e YouTube dependem deles). Baixar agora (~100 MB, SHA-256 conferido, ficam só na pasta do Baixaí)?"; then NEED_DEPS="yes"; fi
+       fi ;;
+esac
+if [ "$NEED_DEPS" = "yes" ]; then "$HELPER" tools install-deps --if-missing || echo "    Não foi possível instalar tudo; rode depois:  baixai tools install-deps"; fi
+
+if [ "$WITH_EXT" = "yes" ] || [ -n "$IDS" ]; then
+  if [ -z "$IDS" ]; then for i in $(cat "$HERE/DEFAULT_EXTENSION_IDS" 2>/dev/null); do IDS="$IDS --extension-id $i"; done; fi
+  echo "==> Registrando o host da extensão do Chrome (opcional)"
+  # shellcheck disable=SC2086
+  "$HELPER" install-host $IDS ${BROWSERS:---browser chrome} --exec "$HELPER" >/dev/null
 fi
 
 echo "==> Diagnóstico"
 "$HELPER" doctor || true
 echo
-echo "Pronto. Reinicie o Chrome e abra o Baixaí: deve aparecer \"Aplicativo local conectado\"."
-echo "Para remover: ./uninstall.sh"
+echo "Pronto! Para baixar, coloque o link entre aspas:"
+if [ "$ON_PATH" = "configured" ]; then
+  echo "    Abra um NOVO terminal e digite:   baixai \"LINK\""
+elif [ "$ON_PATH" = "yes" ]; then
+  echo "    baixai \"LINK\""
+else
+  echo "    $BIN_DIR/baixai \"LINK\""
+  echo "    (para digitar só 'baixai', acrescente ao seu shell:  export PATH=\"\$HOME/.local/bin:\$PATH\")"
+fi
+echo "    Mais exemplos:  baixai --help      Para remover:  \"$APP_ROOT/desinstalar.sh\""

@@ -1,59 +1,77 @@
-# Instala o aplicativo auxiliar do Baixaí para o usuário atual (Windows 10/11). Sem administrador.
-# Uso:  .\install.ps1                         (usa o ID padrão de DEFAULT_EXTENSION_IDS)
-#       .\install.ps1 -ExtensionId ID1,ID2     (IDs informados)
+# Instala o Baixaí para o usuário atual (Windows 10/11). Sem administrador. Deixa o comando `baixai` pronto para uso no terminal.
+# Uso:  .\install.ps1                       (pergunta antes de baixar FFmpeg/Deno e de mexer no PATH)
+#       .\install.ps1 -Deps -NoPath         (sem perguntas)
 param(
-  [string[]]$ExtensionId,
-  [ValidateSet('chrome', 'chromium', 'edge', 'brave')][string[]]$Browser = @('chrome'),
-  [switch]$WithFfmpeg, [switch]$NoFfmpeg
+  [switch]$Deps, [switch]$NoDeps, [switch]$NoPath,
+  [switch]$WithExtension, [string[]]$ExtensionId,
+  [ValidateSet('chrome', 'chromium', 'edge', 'brave')][string[]]$Browser = @('chrome')
 )
 $ErrorActionPreference = 'Stop'
 $Here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $AppRoot = Join-Path $env:APPDATA 'Baixai'
 $AppDir = Join-Path $AppRoot 'app'
+$CmdDir = Join-Path $AppRoot 'cmd'
 if (-not (Test-Path (Join-Path $Here 'baixai-helper'))) { throw 'Pasta baixai-helper\ não encontrada ao lado do instalador.' }
 
-# Aceita também IDs passados separados por espaço (instalar.bat ID1 ID2)
-if (-not $ExtensionId -or $ExtensionId.Count -eq 0) {
-  $defaults = Join-Path $Here 'DEFAULT_EXTENSION_IDS'
-  if (Test-Path $defaults) {
-    $ExtensionId = @(Get-Content $defaults | Where-Object { $_.Trim() })
-    Write-Host "Usando o ID padrão de DEFAULT_EXTENSION_IDS (extensão carregada a partir do pacote 'manual')."
-  } else { throw 'Informe o ID da extensão: .\install.ps1 -ExtensionId <ID>' }
+function Run($exe, $argList) {   # chama um programa nativo sem que o stderr dele vire erro do PowerShell
+  $old = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+  & $exe @argList 2>&1 | ForEach-Object { "$_" } | Out-Host
+  $code = $LASTEXITCODE; $ErrorActionPreference = $old; return $code
+}
+function Ask($q) {   # Enter = sim. Sem terminal interativo: não.
+  if ([Console]::IsInputRedirected) { return $false }
+  $a = Read-Host "$q [S/n]"
+  return -not ($a -match '^(n|N)')
 }
 
 Write-Host "==> Instalando o aplicativo em: $AppDir"
-New-Item -ItemType Directory -Force -Path $AppDir | Out-Null
+New-Item -ItemType Directory -Force -Path $AppDir, $CmdDir | Out-Null
 $Dest = Join-Path $AppDir 'baixai-helper'
 if (Test-Path $Dest) { Remove-Item -Recurse -Force $Dest }
 Copy-Item -Recurse (Join-Path $Here 'baixai-helper') $Dest
 $Helper = Join-Path $Dest 'baixai-helper.exe'
 Get-ChildItem -Recurse $Dest | Unblock-File   # remove a marca de "baixado da internet"
+Copy-Item (Join-Path $Here 'uninstall.ps1') (Join-Path $AppRoot 'desinstalar.ps1') -Force
 
-$hostArgs = @('install-host')
-foreach ($i in $ExtensionId) { $hostArgs += @('--extension-id', $i) }
-foreach ($b in $Browser) { $hostArgs += @('--browser', $b) }
-$hostArgs += @('--exec', $Helper)
-Write-Host '==> Registrando o host Native Messaging (somente para o seu usuário)'
-& $Helper @hostArgs | Out-Null
-if ($LASTEXITCODE -ne 0) { throw 'Falha ao registrar o host Native Messaging.' }
+Write-Host "==> Criando o comando: $CmdDir\baixai.cmd"
+Set-Content -Path (Join-Path $CmdDir 'baixai.cmd') -Encoding ASCII -Value "@echo off`r`n`"$Helper`" %*"
 
-function Ask($q) { if ($WithFfmpeg) { return $true }; $a = Read-Host "$q [s/N]"; return ($a -match '^(s|y)') }
-$haveWinget = [bool](Get-Command winget -ErrorAction SilentlyContinue)
-$haveFfmpeg = [bool](Get-Command ffmpeg -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Links\ffmpeg.exe'))
-if (-not $haveFfmpeg -and -not $NoFfmpeg) {
-  Write-Host '==> FFmpeg não encontrado (necessário para MP3 e para combinar vídeo e áudio).'
-  if ($haveWinget -and (Ask 'Instalar o FFmpeg com o winget (pacote Gyan.FFmpeg, licença GPL)?')) {
-    winget install --id Gyan.FFmpeg -e --accept-source-agreements --accept-package-agreements
-  } else { Write-Host '    Instale depois com:  winget install --id Gyan.FFmpeg' }
+$userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+$onPath = (($userPath -split ';') -contains $CmdDir) -or (($env:Path -split ';') -contains $CmdDir)
+$pathState = if ($onPath) { 'yes' } else { 'no' }
+if (-not $onPath -and -not $NoPath -and (Ask "==> Para usar só digitando 'baixai', posso acrescentar $CmdDir ao PATH do seu usuário. Pode?")) {
+  $new = if ([string]::IsNullOrEmpty($userPath)) { $CmdDir } else { "$userPath;$CmdDir" }
+  [Environment]::SetEnvironmentVariable('Path', $new, 'User')
+  $pathState = 'configured'
+  Write-Host '    ok: PATH do usuário atualizado'
 }
-$haveJs = [bool](Get-Command deno -ErrorAction SilentlyContinue) -or [bool](Get-Command node -ErrorAction SilentlyContinue)
-if (-not $haveJs -and -not $NoFfmpeg) {
-  Write-Host '==> Deno/Node.js não encontrado (ajuda o YouTube a funcionar por completo).'
-  if ($haveWinget -and (Ask 'Instalar o Deno com o winget (DenoLand.Deno, licença MIT)?')) {
-    winget install --id DenoLand.Deno -e --accept-source-agreements --accept-package-agreements
-  } else { Write-Host '    Opcional. Depois:  winget install --id DenoLand.Deno' }
+
+# FFmpeg (MP3 e vídeo em alta qualidade) e Deno (YouTube): opcionais, verificados por SHA-256, guardados só na pasta do Baixaí.
+$needDeps = $false
+if ($Deps) { $needDeps = $true }
+elseif (-not $NoDeps) {
+  if ((Run $Helper @('tools', 'install-deps', '--if-missing', '--dry-run')) -ne 0) {
+    $needDeps = Ask '==> Falta o FFmpeg e/ou o Deno (MP3, vídeo em alta qualidade e YouTube dependem deles). Baixar agora (~150 MB, SHA-256 conferido, ficam só na pasta do Baixaí)?'
+  }
+}
+if ($needDeps) {
+  if ((Run $Helper @('tools', 'install-deps', '--if-missing')) -ne 0) { Write-Host '    Não foi possível instalar tudo; rode depois:  baixai tools install-deps' }
+}
+
+if ($WithExtension -or $ExtensionId) {
+  if (-not $ExtensionId) { $ExtensionId = @(Get-Content (Join-Path $Here 'DEFAULT_EXTENSION_IDS') | Where-Object { $_.Trim() }) }
+  Write-Host '==> Registrando o host da extensão do Chrome (opcional)'
+  $hostArgs = @('install-host'); foreach ($i in $ExtensionId) { $hostArgs += @('--extension-id', $i) }
+  foreach ($b in $Browser) { $hostArgs += @('--browser', $b) }
+  $hostArgs += @('--exec', $Helper)
+  if ((Run $Helper $hostArgs) -ne 0) { throw 'Falha ao registrar o host da extensão.' }
 }
 
 Write-Host '==> Diagnóstico'
-& $Helper doctor
-Write-Host "`nPronto. Reinicie o Chrome e abra o Baixaí: deve aparecer 'Aplicativo local conectado'."
+Run $Helper @('doctor') | Out-Null
+Write-Host ''
+Write-Host 'Pronto! Para baixar, coloque o link entre aspas:'
+if ($pathState -eq 'configured') { Write-Host '    Abra um NOVO terminal (PowerShell ou Prompt) e digite:   baixai "LINK"' }
+elseif ($pathState -eq 'yes') { Write-Host '    baixai "LINK"' }
+else { Write-Host "    & `"$CmdDir\baixai.cmd`" `"LINK`"     (para digitar só 'baixai', adicione $CmdDir ao PATH)" }
+Write-Host "    Mais exemplos:  baixai --help      Para remover:  powershell -ExecutionPolicy Bypass -File `"$AppRoot\desinstalar.ps1`""

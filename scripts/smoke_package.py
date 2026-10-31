@@ -1,178 +1,166 @@
-"""Teste de fumaça do PACOTE final em um sistema real (macOS, Linux ou Windows).
+"""Teste de fumaça do PACOTE final, do jeito que o usuário usa (macOS, Linux e Windows).
 
-Uso: python scripts/smoke_package.py <pasta-do-pacote-extraído>
-Instala com o instalador do pacote (HOME/APPDATA isolados), simula o Chrome lançando o host a partir do manifesto,
-faz um download + conversão reais de uma imagem servida localmente e desinstala.
+Uso: python scripts/smoke_package.py <pasta-dist-com-o-pacote>
+
+Faz, num HOME/APPDATA isolado:
+  1. serve o pacote como se fosse uma Release do GitHub e roda get.sh / get.ps1 de verdade (com --deps: baixa FFmpeg e Deno reais);
+  2. usa o comando `baixai` instalado: --version, doctor, os motores embutidos (yt-dlp e gallery-dl);
+  3. baixa por link um áudio e uma imagem servidos localmente, convertendo (WAV->MP3 e PNG->JPEG) com o FFmpeg instalado;
+  4. confere que links perigosos são recusados;
+  5. desinstala e confere que nada ficou.
 """
 from __future__ import annotations
 
-import io
+import functools
+import hashlib
 import json
 import os
-import struct
+import shutil
 import subprocess
 import sys
 import tempfile
 import threading
-import time
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+for _s in (sys.stdout, sys.stderr):
+    _s.reconfigure(encoding="utf-8", errors="replace")
+
 WIN = sys.platform == "win32"
-pkg = Path(sys.argv[1]).resolve()
+MAC = sys.platform == "darwin"
+ROOT = Path(__file__).resolve().parent.parent
+dist = Path(sys.argv[1]).resolve()
+
 tmp = Path(tempfile.mkdtemp(prefix="baixai-smoke-"))
 home = tmp / "home"
-home.mkdir()
-env = {**os.environ, "HOME": str(home), "USERPROFILE": str(home), "APPDATA": str(home / "AppData" / "Roaming"), "LOCALAPPDATA": str(home / "AppData" / "Local"),
-       "XDG_DATA_HOME": str(home / ".local" / "share")}
 (home / "AppData" / "Roaming").mkdir(parents=True)
 (home / "AppData" / "Local").mkdir(parents=True)
+(home / ".local" / "share").mkdir(parents=True)
+env = {**os.environ, "HOME": str(home), "USERPROFILE": str(home), "APPDATA": str(home / "AppData" / "Roaming"),
+       "LOCALAPPDATA": str(home / "AppData" / "Local"), "XDG_DATA_HOME": str(home / ".local" / "share"),
+       "PYTHONIOENCODING": "utf-8", "BAIXAI_ALLOW_PRIVATE_NETWORK": "1", "SHELL": "/bin/sh"}
+env.pop("BAIXAI_DATA_DIR", None)
+
+if WIN:
+    app_root = home / "AppData" / "Roaming" / "Baixai"
+    cmd_path = app_root / "cmd" / "baixai.cmd"
+    exe = app_root / "app" / "baixai-helper" / "baixai-helper.exe"
+    uninstaller = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(app_root / "desinstalar.ps1"), "-PurgeData"]
+elif MAC:
+    app_root = home / "Library" / "Application Support" / "Baixai"
+    cmd_path = home / ".local" / "bin" / "baixai"
+    exe = app_root / "app" / "baixai-helper" / "baixai-helper"
+    uninstaller = [str(app_root / "desinstalar.sh"), "--purge-data"]
+else:
+    app_root = home / ".local" / "share" / "baixai"
+    cmd_path = home / ".local" / "bin" / "baixai"
+    exe = app_root / "app" / "baixai-helper" / "baixai-helper"
+    uninstaller = [str(app_root / "desinstalar.sh"), "--purge-data"]
 
 
 def step(msg: str) -> None:
     print(f"\n=== {msg}", flush=True)
 
 
-def sh(cmd: list[str], **kw) -> subprocess.CompletedProcess:
+def run(cmd: list[str], timeout=900, ok=(0,), **kw) -> subprocess.CompletedProcess:
     print("+", " ".join(map(str, cmd)), flush=True)
-    r = subprocess.run(cmd, env=env, text=True, capture_output=True, **kw)
-    print(r.stdout[-1500:], r.stderr[-800:], sep="\n")
-    if r.returncode != 0:
+    r = subprocess.run(cmd, env={**env, **kw.pop("extra_env", {})}, text=True, encoding="utf-8", errors="replace",
+                       capture_output=True, timeout=timeout, **kw)
+    print((r.stdout or "")[-2500:], (r.stderr or "")[-1500:], sep="\n", flush=True)
+    if r.returncode not in ok:
         raise SystemExit(f"FALHOU (código {r.returncode}): {' '.join(map(str, cmd))}")
     return r
 
 
-def manifest_path() -> Path:
-    if WIN:
-        import winreg
+def serve(directory: Path) -> tuple[ThreadingHTTPServer, str]:
+    class Quiet(SimpleHTTPRequestHandler):
+        def log_message(self, *a): pass
 
-        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Google\Chrome\NativeMessagingHosts\local.baixai.helper") as k:
-            return Path(winreg.QueryValueEx(k, "")[0])
-    base = home / ("Library/Application Support/Google/Chrome" if sys.platform == "darwin" else ".config/google-chrome")
-    return base / "NativeMessagingHosts" / "local.baixai.helper.json"
+    srv = ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=str(directory)))
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    return srv, f"http://127.0.0.1:{srv.server_address[1]}"
 
 
-# ---------------------------------------------------------------- 1. instalar
-step("instalação pelo instalador do pacote")
+# ------------------------------------------------------------------ 1. simular a Release e instalar com get.sh / get.ps1
+step("Release simulada (pacote real + SHA256SUMS) servida localmente")
+version = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))["version"]
+pkgs = [p for p in dist.glob("baixai-helper-*") if p.suffix == ".zip" or p.name.endswith(".tar.gz")]
+assert len(pkgs) == 1, f"esperava 1 pacote do helper em {dist}, achei {pkgs}"
+rel = tmp / "rel" / "download" / f"v{version}"
+rel.mkdir(parents=True)
+shutil.copy2(pkgs[0], rel / pkgs[0].name)
+(rel / "SHA256SUMS.txt").write_text(f"{hashlib.sha256(pkgs[0].read_bytes()).hexdigest()}  {pkgs[0].name}\n")
+rel_srv, rel_url = serve(tmp / "rel")
+install_env = {"BAIXAI_BASE_URL": rel_url, "BAIXAI_VERSION": version}
+
+step("get.sh / get.ps1 (instala, baixa FFmpeg e Deno reais, confere SHA-256)")
 if WIN:
-    sh(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(pkg / "install.ps1"), "-NoFfmpeg"])
+    run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(ROOT / "get.ps1")], extra_env={**install_env, "BAIXAI_INSTALL_OPTIONS": "Deps,NoPath"})
 else:
-    sh([str(pkg / "install.sh"), "--no-ffmpeg"])
-mp = manifest_path()
-manifest = json.loads(mp.read_text(encoding="utf-8"))
-print("manifesto:", json.dumps(manifest, indent=1))
-assert manifest["name"] == "local.baixai.helper" and manifest["type"] == "stdio"
-assert Path(manifest["path"]).is_absolute() and Path(manifest["path"]).is_file(), "o manifesto aponta para um executável inexistente"
-assert manifest["allowed_origins"] and all(o.startswith("chrome-extension://") and o.endswith("/") for o in manifest["allowed_origins"])
+    run(["sh", str(ROOT / "get.sh"), "--deps", "--no-path"], extra_env=install_env)
+assert cmd_path.is_file() and exe.is_file(), "o comando baixai ou o aplicativo não foram instalados"
 
-# ---------------------------------------------------------------- 2. mídia local para baixar
-from PIL import Image  # noqa: E402  (disponível no ambiente da CI)
+step("integridade: pacote adulterado deve ser recusado antes de instalar")
+(rel / "SHA256SUMS.txt").write_text(f"{'0' * 64}  {pkgs[0].name}\n")
+bad_home = tmp / "bad"
+bad_home.mkdir()
+bad = run(["sh", str(ROOT / "get.sh"), "--no-deps", "--no-path"] if not WIN else
+          ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(ROOT / "get.ps1")],
+          extra_env={**install_env, "HOME": str(bad_home), "APPDATA": str(bad_home), "XDG_DATA_HOME": str(bad_home), "LOCALAPPDATA": str(bad_home)}, ok=(1, 2, 255) if not WIN else (0, 1, 255))
+out_bad = bad.stdout + bad.stderr  # sem acento: o console do Windows pode trocar a codificação
+assert "SHA-256" in out_bad and "confere" in out_bad, "esperava a mensagem de SHA-256 inválido"
+assert not any(bad_home.iterdir()), "nada deveria ter sido instalado"
+(rel / "SHA256SUMS.txt").write_text(f"{hashlib.sha256(pkgs[0].read_bytes()).hexdigest()}  {pkgs[0].name}\n")
+rel_srv.shutdown()
 
-buf = io.BytesIO()
-Image.new("RGBA", (16, 16), (0, 120, 255, 0)).save(buf, "PNG")
-PNG = buf.getvalue()
+# ------------------------------------------------------------------ 2. o comando instalado
+baixai = [str(cmd_path)]
+step("baixai --version / doctor / motores embutidos")
+assert version in run(baixai + ["--version"]).stdout
+doc = run(baixai + ["doctor"]).stdout
+for needle in ("[ok] yt-dlp", "[ok] gallery-dl", "[ok] FFmpeg", "[ok] Runtime JS"):
+    assert needle in doc, f"doctor não mostrou '{needle}'"
+assert run([str(exe), "--engine", "yt-dlp", "--version"]).stdout.strip()
+assert run([str(exe), "--engine", "gallery-dl", "--version"]).stdout.strip()
 
-
-class H(BaseHTTPRequestHandler):
-    def do_HEAD(self): self._go(True)
-    def do_GET(self): self._go(False)
-    def _go(self, head):
-        self.send_response(200); self.send_header("Content-Type", "image/png"); self.send_header("Content-Length", str(len(PNG))); self.end_headers()
-        if not head: self.wfile.write(PNG)
-    def log_message(self, *a): pass
-
-
-srv = ThreadingHTTPServer(("127.0.0.1", 0), H)
-threading.Thread(target=srv.serve_forever, daemon=True).start()
-url = f"http://127.0.0.1:{srv.server_address[1]}/figura.png"
-
-# ---------------------------------------------------------------- 3. simular o Chrome
-step("simulando o Chrome: lança o host com a origem da extensão (e --parent-window no Windows)")
-origin = manifest["allowed_origins"][0]
-argv = [manifest["path"], origin] + (["--parent-window=0"] if WIN else [])
-host_env = {**env, "BAIXAI_ALLOW_PRIVATE_NETWORK": "1"}  # só para o servidor de teste em 127.0.0.1
-p = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=host_env)
-events: list[dict] = []
-lock = threading.Condition()
-resp: dict = {}
+# ------------------------------------------------------------------ 3. downloads reais de mídia local
+bin_dir = app_root / "bin"
+ffmpeg, ffprobe = bin_dir / ("ffmpeg.exe" if WIN else "ffmpeg"), bin_dir / ("ffprobe.exe" if WIN else "ffprobe")
+assert ffmpeg.is_file() and ffprobe.is_file()
+media = tmp / "media"
+media.mkdir()
+run([str(ffmpeg), "-v", "error", "-f", "lavfi", "-i", "sine=frequency=440:duration=2", "-y", str(media / "tom.wav")])
+run([str(ffmpeg), "-v", "error", "-f", "lavfi", "-i", "color=c=blue:s=64x64:d=1", "-frames:v", "1", "-y", str(media / "figura.png")])
+media_srv, media_url = serve(media)
+dest = tmp / "Downloads"
 
 
-def reader():
-    while True:
-        h = p.stdout.read(4)
-        if len(h) < 4:
-            return
-        body = p.stdout.read(struct.unpack("=I", h)[0])
-        m = json.loads(body)
-        with lock:
-            (resp.__setitem__(m["id"], m) if "ok" in m else events.append(m))
-            lock.notify_all()
+def codec(path: Path) -> str:
+    return run([str(ffprobe), "-v", "error", "-show_entries", "stream=codec_name", "-of", "default=nw=1:nk=1", str(path)]).stdout.strip()
 
 
-threading.Thread(target=reader, daemon=True).start()
+step("baixai LINK (áudio detectado sozinho) -> MP3")
+r = run(baixai + [f"{media_url}/tom.wav", "-o", str(dest)])
+mp3 = next(dest.rglob("*.mp3"))
+assert codec(mp3) == "mp3", f"esperava MP3, veio {codec(mp3)}"
+assert "Pronto" in r.stdout
 
+step("baixai -i LINK --formato-imagem jpeg -> JPEG")
+run(baixai + ["-i", f"{media_url}/figura.png", "--formato-imagem", "jpeg", "-o", str(dest)])
+jpg = next(dest.rglob("*.jpg"))
+assert codec(jpg) == "mjpeg", f"esperava JPEG, veio {codec(jpg)}"
 
-def call(cmd: str, payload: dict | None = None, timeout=60) -> dict:
-    mid = f"s{len(resp)}"
-    b = json.dumps({"id": mid, "cmd": cmd, "payload": payload or {}}).encode()
-    p.stdin.write(struct.pack("=I", len(b)) + b); p.stdin.flush()
-    with lock:
-        assert lock.wait_for(lambda: mid in resp, timeout), f"sem resposta para {cmd}"
-    return resp[mid]
+step("links perigosos e opções inválidas são recusados")
+for bad_url in ("file:///etc/passwd", "ftp://example.com/x", "http://localhost:22/", "http://169.254.169.254/latest/meta-data/"):
+    r = run(baixai + [bad_url], ok=(1,), extra_env={"BAIXAI_ALLOW_PRIVATE_NETWORK": ""})
+    assert "Erro" in r.stderr, f"{bad_url}: esperava mensagem de erro"
+run(baixai + ["-a", f"{media_url}/figura.png"], ok=(1,))
+media_srv.shutdown()
 
-
-r = call("hello")
-assert r["ok"], r
-d = r["data"]
-print("hello:", d["version"], "protocolo", d["protocol"], d["platform"])
-assert d["tools"]["ytdlp"]["ok"] and d["tools"]["gallerydl"]["ok"], d["tools"]
-print("yt-dlp", d["tools"]["ytdlp"]["version"], "| gallery-dl", d["tools"]["gallerydl"]["version"], "| ffmpeg", d["tools"]["ffmpeg"]["ok"])
-assert call("analyze", {"url": "file:///etc/passwd"})["error"]["code"] == "invalid_scheme"
-
-step("fluxo real com o executável empacotado: analisar → enfileirar → baixar → converter PNG→JPEG (Pillow embutido)")
-dl = tmp / "Downloads"
-assert call("set_settings", {"settings": {"download_dir": str(dl)}})["ok"]
-a = call("analyze", {"url": url})
-assert a["ok"] and a["data"]["modes"] == ["image"], a
-e = call("enqueue", {"url": url, "mode": "image", "options": {"image_format": "jpeg", "engine": "direct"}})
-assert e["ok"], e
-jid = e["data"]["job"]["id"]
-end = time.time() + 60
-job = None
-while time.time() < end:
-    with lock:
-        for ev in events:
-            if ev.get("event") == "job" and ev["job"]["id"] == jid and ev["job"]["state"] in ("done", "failed"):
-                job = ev["job"]
-        if job:
-            break
-        lock.wait(0.5)
-assert job and job["state"] == "done", job
-f = Path(job["files"][0]["path"])
-assert f.suffix == ".jpg" and f.is_file() and Image.open(f).format == "JPEG", f
-assert any("transparência" in n for n in job["notes"]), job["notes"]
-print("arquivo:", f, f.stat().st_size, "bytes")
-
-step("origem não autorizada deve ser recusada")
-bad = subprocess.run([manifest["path"], "chrome-extension://" + "z" * 32 + "/"], stdin=subprocess.DEVNULL, capture_output=True, env=host_env, timeout=30)
-assert bad.returncode == 2 and b"origin_not_allowed" in bad.stdout, (bad.returncode, bad.stdout[:200])
-
-p.stdin.close()
-assert p.wait(30) == 0
-
-# ---------------------------------------------------------------- 4. desinstalar
+# ------------------------------------------------------------------ 4. desinstalar
 step("desinstalação")
-if WIN:
-    sh(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(pkg / "uninstall.ps1"), "-PurgeData"])
-else:
-    sh([str(pkg / "uninstall.sh"), "--purge-data"])
-assert not mp.exists(), "o manifesto deveria ter sido removido"
-if WIN:
-    import winreg
-
-    try:
-        winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Google\Chrome\NativeMessagingHosts\local.baixai.helper")
-        raise SystemExit("a chave do registro deveria ter sido removida")
-    except FileNotFoundError:
-        pass
+run(uninstaller)
+assert not cmd_path.exists(), "o comando baixai deveria ter sido removido"
+assert not app_root.exists(), "a pasta do Baixaí deveria ter sido removida (--purge-data)"
 print("\nSMOKE OK")
+shutil.rmtree(tmp, ignore_errors=True)

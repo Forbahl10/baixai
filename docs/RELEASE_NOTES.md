@@ -1,43 +1,46 @@
 ## Baixaí v0.1.0 — pré-lançamento
 
-### Instalação rápida (cole no terminal)
+Baixe vídeos, áudios e imagens de um link, direto do **terminal**, no seu computador. Sem servidor, sem conta, sem telemetria.
 
-macOS / Linux:
+### Instalar (cole no terminal)
+
+**macOS e Linux**:
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Forbahl10/baixai/main/get.sh | sh
 ```
-Windows (PowerShell):
+**Windows 10/11** (PowerShell):
 ```powershell
 irm https://raw.githubusercontent.com/Forbahl10/baixai/main/get.ps1 | iex
 ```
-Depois, 1 passo manual: em `chrome://extensions`, ative o **Modo do desenvolvedor** → **Carregar sem compactação** → pasta `Baixai/extensao`. O Chrome não permite instalar extensões por linha de comando.
+O instalador confere o SHA-256, instala só para o seu usuário (sem `sudo`/administrador) e **pergunta** antes de mexer no PATH e antes de baixar o FFmpeg e o Deno. Depois, abra um **novo terminal** e use, **sempre com o link entre aspas**:
 
-Extensão do Chrome + aplicativo auxiliar que roda no **seu computador** para baixar vídeos, áudios e imagens a partir de um link. Sem servidor, sem conta, sem telemetria.
+```sh
+baixai "LINK"          # vídeo em MP4 (até 1080p)
+baixai -a "LINK"       # só o áudio, em MP3
+baixai -i "LINK"       # imagens
+baixai --help
+```
 
-### Como instalar (3 passos)
+### Arquivos desta Release
 
-**1. Extensão** — baixe `baixai-extension-0.1.0-manual.zip`, extraia em uma pasta que você vai manter, abra `chrome://extensions`, ative o **Modo do desenvolvedor** e clique em **Carregar sem compactação**. (O ID desta extensão é sempre `gipfhgbdolmibhecjiemjdodedbfmahg`.)
+| Arquivo | Para quê |
+|---|---|
+| `baixai-helper-0.1.0-macos-arm64.tar.gz` | macOS Apple Silicon (M1 ou mais novo) |
+| `baixai-helper-0.1.0-macos-x86_64.tar.gz` | macOS Intel |
+| `baixai-helper-0.1.0-windows-x86_64.zip` | Windows 10/11 |
+| `baixai-helper-0.1.0-linux-x86_64.tar.gz` | Linux x86_64 |
+| `baixai-extension-0.1.0*.zip` | Extensão do Chrome (opcional, experimental, não testada em Chrome real) |
+| `baixai-source-0.1.0.tar.gz` | Código-fonte |
+| `SHA256SUMS.txt` | Checksums de todos os arquivos |
 
-**2. Aplicativo auxiliar** — baixe o arquivo do seu sistema abaixo e extraia:
-
-| Sistema | Arquivo | Instalar |
-|---|---|---|
-| **macOS (Apple Silicon, M1+)** | `baixai-helper-0.1.0-macos-arm64.tar.gz` | no Terminal, dentro da pasta extraída: `./install.sh` |
-| macOS (Intel) | `baixai-helper-0.1.0-macos-x86_64.tar.gz` | `./install.sh` |
-| **Windows 10/11** | `baixai-helper-0.1.0-windows-x86_64.zip` | dois cliques em **`instalar.bat`** |
-| Linux (x86_64) | `baixai-helper-0.1.0-linux-x86_64.tar.gz` | `./install.sh` |
-
-**3. Reinicie o Chrome** e abra o Baixaí: deve aparecer **“Aplicativo local conectado”**. Se não, abra a aba **Diagnóstico**.
-
-O instalador **pergunta** antes de baixar o FFmpeg (necessário para MP3 e para juntar vídeo e áudio). Para remover: `./uninstall.sh` (macOS/Linux) ou `remover.bat` (Windows).
+Você também pode baixar o pacote do seu sistema, extrair e rodar `./install.sh` (macOS/Linux) ou `instalar.bat` (Windows).
 
 ### Leia antes de usar
 
-- **Pré-lançamento.** O aplicativo **não é assinado** pela Apple nem pela Microsoft: o macOS ou o Windows podem exibir alertas. O instalador cuida da marca de quarentena quando você o executa. A extensão ainda **não está na Chrome Web Store**.
-- **Testado**: YouTube (vídeo MP4 e áudio MP3) e imagens do X em macOS; instalação, comunicação com o Chrome (simulada) e download/conversão de imagem do pacote em macOS, Windows e Linux pela integração contínua deste repositório. **Não testado ainda**: a interface da extensão num Chrome de verdade em todos os sistemas, e Instagram, TikTok e SoundCloud ao vivo. Veja `docs/MATRIZ.md`.
-- Só **conteúdo público**: sem login, cookies, DRM ou paywall. Muito conteúdo do Instagram/TikTok/X exige login e não funciona.
-- Para o YouTube funcionar por completo, instale **Deno** ou **Node.js 22+**.
+- **Pré-lançamento.** O aplicativo **não é assinado** pela Apple nem pela Microsoft; o sistema pode mostrar um alerta.
+- **Testado com links reais**: YouTube (vídeo e áudio) e imagem do X, em macOS Apple Silicon. Instalação, FFmpeg, Deno e conversões são exercitados pela integração contínua do repositório; veja `docs/MATRIZ.md` para o que foi e o que não foi verificado em cada sistema. Instagram, TikTok, SoundCloud e playlists estão implementados, **mas não validados ao vivo**.
+- Só **conteúdo público**: sem login, cookies, DRM ou paywall. Muito conteúdo do Instagram, TikTok e X exige login e não funciona.
 - Baixe apenas conteúdo **próprio, autorizado ou permitido**. Projeto independente, sem parceria com nenhuma plataforma.
 
-### Verificação e licenças
-`SHA256SUMS.txt` lista os checksums. Licença **GPL-2.0-ou-posterior**; avisos de terceiros em `THIRD_PARTY_NOTICES.md` (dentro de cada pacote), código-fonte em `baixai-source-0.1.0.tar.gz`.
+### Licenças
+**GPL-2.0-ou-posterior**. FFmpeg (GPL-3.0) e Deno (MIT) não vão no pacote: são baixados na instalação, com a sua confirmação. Avisos de terceiros em `THIRD_PARTY_NOTICES.md` e fontes em `baixai-source-0.1.0.tar.gz`.
