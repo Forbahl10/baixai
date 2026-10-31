@@ -44,6 +44,8 @@ Os testes `live` ficam fora da execução padrão (`-m 'not live'`) e são ignor
 - Extensão: `tsc --noEmit` sem erros; **20 testes passando**.
 - **Teste de fumaça do pacote** (`scripts/smoke_package.py`): passou na CI em macOS Apple Silicon, macOS Intel, Linux x86_64 e Windows x86_64, e numa máquina real (macOS Apple Silicon).
 - Live (links fornecidos pelo usuário), em macOS Apple Silicon, com o **comando instalado** (`baixai`) e só o Deno baixado pelo instalador (sem Node no `PATH`): YouTube vídeo MP4 H.264+AAC ✅, YouTube áudio MP3 ✅, post do X com imagem convertida para PNG ✅. SoundCloud/TikTok/Instagram: **não executados**.
+- **Comando público de ponta a ponta** (v0.1.1, Mac real, HOME isolado, sem ferramentas do sistema): `curl ... get.sh | sh` baixou do GitHub, conferiu o SHA-256, baixou FFmpeg e Deno, `baixai doctor` "Tudo certo", e os downloads reais funcionaram (YouTube MP4 e MP3, imagem do X em JPEG, **link direto por HTTPS**).
+- **Lição da v0.1.0**: o pacote construído na CI passou em todos os testes da CI, mas falhava em qualquer outra máquina ao baixar por HTTPS, porque o Python da CI guardava os certificados num caminho que só existe lá. Corrigido (certifi embutido) e o teste de fumaça passou a rodar **sem certificados do sistema** para detectar isso.
 - Instalador interativo (Mac, terminal simulado em HOME isolado): PATH só com consentimento, sem duplicar ao reinstalar, desinstalador remove somente as linhas dele ✅.
 
 ## O que NÃO foi testado
