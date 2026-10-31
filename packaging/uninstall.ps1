@@ -1,4 +1,4 @@
-# Remove o Baixaí (comando, aplicativo, FFmpeg/Deno baixados e a entrada de PATH). -PurgeData apaga também fila, histórico e logs.
+﻿# Remove o Baixaí (comando, aplicativo, FFmpeg/Deno baixados e a entrada de PATH). -PurgeData apaga também fila, histórico e logs.
 param([switch]$PurgeData)
 $ErrorActionPreference = 'Continue'
 $AppRoot = Join-Path $env:APPDATA 'Baixai'

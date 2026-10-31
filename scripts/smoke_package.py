@@ -40,6 +40,7 @@ env = {**os.environ, "HOME": str(home), "USERPROFILE": str(home), "APPDATA": str
        "LOCALAPPDATA": str(home / "AppData" / "Local"), "XDG_DATA_HOME": str(home / ".local" / "share"),
        "PYTHONIOENCODING": "utf-8", "BAIXAI_ALLOW_PRIVATE_NETWORK": "1", "SHELL": "/bin/sh"}
 env.pop("BAIXAI_DATA_DIR", None)
+env.pop("PSModulePath", None)  # o Windows PowerShell 5.1 não deve herdar o do pwsh 7 (o passo da CI roda em pwsh)
 
 if WIN:
     app_root = home / "AppData" / "Roaming" / "Baixai"

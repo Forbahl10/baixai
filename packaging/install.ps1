@@ -1,4 +1,4 @@
-# Instala o Baixaí para o usuário atual (Windows 10/11). Sem administrador. Deixa o comando `baixai` pronto para uso no terminal.
+﻿# Instala o Baixaí para o usuário atual (Windows 10/11). Sem administrador. Deixa o comando `baixai` pronto para uso no terminal.
 # Uso:  .\install.ps1                       (pergunta antes de baixar FFmpeg/Deno e de mexer no PATH)
 #       .\install.ps1 -Deps -NoPath         (sem perguntas)
 param(
@@ -34,7 +34,7 @@ Get-ChildItem -Recurse $Dest | Unblock-File   # remove a marca de "baixado da in
 Copy-Item (Join-Path $Here 'uninstall.ps1') (Join-Path $AppRoot 'desinstalar.ps1') -Force
 
 Write-Host "==> Criando o comando: $CmdDir\baixai.cmd"
-Set-Content -Path (Join-Path $CmdDir 'baixai.cmd') -Encoding ASCII -Value "@echo off`r`n`"$Helper`" %*"
+Set-Content -Path (Join-Path $CmdDir 'baixai.cmd') -Encoding Oem -Value "@echo off`r`n`"$Helper`" %*"
 
 $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
 $onPath = (($userPath -split ';') -contains $CmdDir) -or (($env:Path -split ';') -contains $CmdDir)
