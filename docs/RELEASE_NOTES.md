@@ -1,5 +1,17 @@
 ## Baixaí v0.1.0 — pré-lançamento
 
+### Instalação rápida (cole no terminal)
+
+macOS / Linux:
+```sh
+curl -fsSL https://raw.githubusercontent.com/Forbahl10/baixai/main/get.sh | sh
+```
+Windows (PowerShell):
+```powershell
+irm https://raw.githubusercontent.com/Forbahl10/baixai/main/get.ps1 | iex
+```
+Depois, 1 passo manual: em `chrome://extensions`, ative o **Modo do desenvolvedor** → **Carregar sem compactação** → pasta `Baixai/extensao`. O Chrome não permite instalar extensões por linha de comando.
+
 Extensão do Chrome + aplicativo auxiliar que roda no **seu computador** para baixar vídeos, áudios e imagens a partir de um link. Sem servidor, sem conta, sem telemetria.
 
 ### Como instalar (3 passos)

@@ -11,7 +11,27 @@ Extensão do Chrome (Manifest V3) + aplicativo auxiliar local para baixar **víd
 
 **Estado: MVP (v0.1.0).** O que foi realmente testado e o que não foi está em [`docs/MATRIZ.md`](docs/MATRIZ.md) e [`docs/TESTES.md`](docs/TESTES.md). **Nada foi publicado** (loja, site ou releases): veja [`docs/chrome-web-store/checklist.md`](docs/chrome-web-store/checklist.md).
 
-## Instalação (usuário)
+## Instalação rápida (cole no terminal)
+
+**macOS (Apple Silicon ou Intel) e Linux** — cole no Terminal:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Forbahl10/baixai/main/get.sh | sh
+```
+
+**Windows 10/11** — cole no PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/Forbahl10/baixai/main/get.ps1 | iex
+```
+
+O comando baixa o pacote da [última Release](https://github.com/Forbahl10/baixai/releases/latest), confere o SHA-256, instala o aplicativo auxiliar **só para o seu usuário** (sem `sudo`/administrador) e deixa a extensão pronta em `~/Baixai/extensao` (Windows: `%USERPROFILE%\Baixai\extensao`). Ele só pergunta antes de baixar o FFmpeg.
+
+**Falta 1 passo manual, e nenhum programa consegue fazê-lo por você** (o Chrome não permite instalar extensão por linha de comando): abra `chrome://extensions` → ative o **Modo do desenvolvedor** → **Carregar sem compactação** → escolha a pasta `Baixai/extensao`. Depois reinicie o Chrome e abra o Baixaí: deve aparecer **“Aplicativo local conectado”**. Não apague nem mova essa pasta.
+
+Prefere ler o script antes de rodar? [`get.sh`](get.sh) e [`get.ps1`](get.ps1) têm poucas linhas. Para remover: `~/Baixai/desinstalar.sh` (Windows: `desinstalar.ps1` na mesma pasta).
+
+## Instalação manual (usuário)
 
 1. **Extensão**: extraia `dist/baixai-extension-0.1.0.zip` (ou use `dist/extension-unpacked/`), abra `chrome://extensions`, ative o *Modo do desenvolvedor* → *Carregar sem compactação*. Para a pasta `extension-unpacked` o ID é fixo: veja `dist/extension-dev-id.txt` (`gipfhgbdolmibhecjiemjdodedbfmahg`). Ao carregar o ZIP extraído, o ID será outro (copie-o de `chrome://extensions`).
 2. **Aplicativo auxiliar** (macOS Apple Silicon testado):
