@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Baixaí — baixe vídeos, áudios e imagens com um aplicativo local</title>
+<meta name="description" content="Extensão para Chrome e aplicativo auxiliar que roda no seu computador: cole um link, escolha o formato e baixe. Sem servidor, sem conta, sem telemetria.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="brand"><img src="icon-128.png" alt="" width="32" height="32"> Baixaí</div>
+  <nav aria-label="Principal"><a href="#instalar">Instalar</a><a href="#suporte">Suporte</a><a href="privacidade.html">Privacidade</a></nav>
+</div></header>
+<main>
+<div class="wrap">
+  <div class="hero">
+    <h1>Cole um link. Escolha o formato. Baixe.</h1>
+    <p class="lead">Uma extensão do Chrome conectada a um aplicativo que roda <strong>no seu computador</strong>: nenhum servidor processa seus downloads, não há conta e não há telemetria.</p>
+    <a class="btn" href="#instalar">Como instalar</a><a class="btn secondary" href="#suporte">O que funciona</a>
+    <p class="note"><strong>Versão {{VERSION}} — pré-lançamento.</strong> A extensão ainda <strong>não está publicada</strong> na Chrome Web Store; por enquanto ela é instalada manualmente (passos abaixo).</p>
+  </div>
+
+  <section aria-labelledby="como">
+    <h2 id="como">Como funciona</h2>
+    <div class="cards">
+      <div class="card"><h3>1. Extensão</h3><p class="muted">A interface no Chrome: campo de link, prévia, formatos e a lista de downloads.</p></div>
+      <div class="card"><h3>2. Aplicativo auxiliar</h3><p class="muted">Roda no seu computador com yt-dlp, gallery-dl e FFmpeg. <strong>Uma extensão sozinha não executa Python nem FFmpeg</strong>, por isso este app é instalado à parte.</p></div>
+      <div class="card"><h3>3. Conexão segura</h3><p class="muted">O Chrome fala com o app por Native Messaging: sem portas abertas e só para esta extensão.</p></div>
+    </div>
+  </section>
+
+  <section id="instalar" aria-labelledby="inst">
+    <h2 id="inst">Instalação</h2>
+    <h3>Passo 1 — Extensão (modo desenvolvedor)</h3>
+    <p><a class="btn secondary" href="downloads/baixai-extension-{{VERSION}}.zip" download>Baixar a extensão (.zip)</a></p>
+    <ol>
+      <li>Extraia o ZIP em uma pasta que você vai manter.</li>
+      <li>Abra <code>chrome://extensions</code>, ative o <strong>Modo do desenvolvedor</strong> e clique em <strong>Carregar sem compactação</strong>, escolhendo a pasta extraída.</li>
+      <li>Copie o <strong>ID da extensão</strong> mostrado no cartão (ou na aba <em>Ajuda</em> do Baixaí).</li>
+    </ol>
+    <h3>Passo 2 — Aplicativo auxiliar</h3>
+    <table>
+      <thead><tr><th>Sistema</th><th>Download</th><th>Situação</th></tr></thead>
+      <tbody>
+        <tr><td>macOS (Apple Silicon)</td><td><a href="downloads/baixai-helper-{{VERSION}}-macos-arm64.tar.gz" download>baixai-helper-{{VERSION}}-macos-arm64.tar.gz</a><br><span class="small muted">SHA-256: <code>{{SHA_MAC}}</code></span></td><td>Testado (sem assinatura/notarização)</td></tr>
+        <tr><td>Windows 10/11</td><td>—</td><td><span class="badge">Em breve</span> scripts escritos, ainda não testados</td></tr>
+        <tr><td>Linux</td><td>—</td><td><span class="badge">Em breve</span> ainda não testado</td></tr>
+      </tbody>
+    </table>
+    <p>No macOS, no Terminal:</p>
+<pre>tar -xzf baixai-helper-{{VERSION}}-macos-arm64.tar.gz
+cd baixai-helper-{{VERSION}}-macos-arm64
+./install.sh --extension-id SEU_ID_AQUI</pre>
+    <p class="muted small">O instalador copia o app para a sua pasta de usuário (sem <code>sudo</code>), registra o host do Chrome e, se você aceitar, baixa o FFmpeg conferindo o SHA-256. Para remover: <code>./uninstall.sh</code>.</p>
+    <h3>Passo 3 — Verificar</h3>
+    <p>Reinicie o Chrome e abra o Baixaí. Deve aparecer <strong>“Aplicativo local conectado”</strong>. Se não, abra a aba <em>Diagnóstico</em>.</p>
+  </section>
+
+  <section id="suporte" aria-labelledby="sup">
+    <h2 id="sup">O que funciona (e o que ainda não foi validado)</h2>
+    <p class="muted">Identificamos o tipo real de mídia de cada link e mostramos só as opções disponíveis. Nada é garantido só porque a plataforma aparece numa lista de uma biblioteca.</p>
+    <table>
+      <thead><tr><th>Plataforma</th><th>Situação nesta versão</th></tr></thead>
+      <tbody>
+        <tr><td>YouTube</td><td>Vídeo MP4 e áudio MP3 <strong>testados</strong> com um vídeo público. Playlists implementadas, não validadas ao vivo.</td></tr>
+        <tr><td>X (Twitter)</td><td>Imagens <strong>testadas</strong> (post público). Vídeo implementado, não validado ao vivo.</td></tr>
+        <tr><td>Instagram</td><td>Implementado, <strong>não validado ao vivo</strong>. Muito conteúdo exige login, que não é suportado.</td></tr>
+        <tr><td>TikTok</td><td>Implementado, <strong>não validado ao vivo</strong>.</td></tr>
+        <tr><td>SoundCloud</td><td>Implementado, <strong>não validado ao vivo</strong>.</td></tr>
+        <tr><td>Imagem/áudio por link direto</td><td><strong>Testado</strong> (original, JPEG, PNG; áudio → MP3).</td></tr>
+      </tbody>
+    </table>
+    <p class="small muted">Somente conteúdo público: o Baixaí não usa sua conta, cookies, e não contorna DRM, paywalls ou controles de acesso.</p>
+  </section>
+
+  <section aria-labelledby="resp">
+    <h2 id="resp">Use com responsabilidade</h2>
+    <p>Baixe apenas conteúdo <strong>próprio, autorizado ou permitido</strong> pelo autor, pela licença ou pelos termos da plataforma. O Baixaí é um projeto independente: <strong>não tem parceria, patrocínio nem aprovação</strong> do YouTube, Instagram, TikTok, X, SoundCloud ou de qualquer outra plataforma citada.</p>
+  </section>
+
+  <section aria-labelledby="lic">
+    <h2 id="lic">Código aberto e licenças</h2>
+    <p>O Baixaí é distribuído sob a <strong>GPL-2.0-ou-posterior</strong> e usa yt-dlp (Unlicense), gallery-dl (GPL-2.0) e FFmpeg (opcional, GPL-3.0 no build testado). Os avisos de terceiros e o código-fonte acompanham o pacote (<code>THIRD_PARTY_NOTICES.md</code>, <code>CODIGO-FONTE.md</code>, pasta <code>sources/</code>) e há o <a href="downloads/baixai-source-{{VERSION}}.tar.gz">código-fonte do projeto</a>. <a href="downloads/SHA256SUMS.txt">Checksums</a>.</p>
+  </section>
+</div>
+</main>
+<footer><div class="wrap">Baixaí {{VERSION}} · <a href="privacidade.html">Política de privacidade</a> · Sem telemetria · Projeto independente.</div></footer>
+</body>
+</html>

@@ -1,0 +1,10 @@
+.venv/
+.tools/
+.scratch/
+node_modules/
+build/
+dist/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/

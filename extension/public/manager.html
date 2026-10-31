@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Baixaí</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="manager">
+  <a class="skip" href="#main">Pular para o conteúdo</a>
+  <header class="app-header">
+    <img src="icons/icon-48.png" alt="" width="32" height="32">
+    <h1 class="app-name">Baixaí</h1>
+    <span id="chip"></span>
+    <span id="theme" class="push"></span>
+  </header>
+  <nav class="tabs" aria-label="Seções">
+    <a id="nav-adicionar" href="#/adicionar">Adicionar</a>
+    <a id="nav-downloads" href="#/downloads">Downloads <span id="nav-downloads-count" class="count" hidden></span></a>
+    <a id="nav-configuracoes" href="#/configuracoes">Configurações</a>
+    <a id="nav-diagnostico" href="#/diagnostico">Diagnóstico</a>
+    <a id="nav-ajuda" href="#/ajuda">Ajuda</a>
+  </nav>
+  <main id="main" tabindex="-1">
+    <div id="banner"></div>
+    <section id="view-adicionar" aria-label="Adicionar"></section>
+    <section id="view-downloads" aria-label="Downloads" hidden></section>
+    <section id="view-configuracoes" aria-label="Configurações" hidden></section>
+    <section id="view-diagnostico" aria-label="Diagnóstico" hidden></section>
+    <section id="view-ajuda" aria-label="Ajuda" hidden></section>
+  </main>
+  <footer class="app-footer muted">Baixe apenas conteúdo próprio, autorizado ou permitido. O Baixaí é independente e não tem parceria com as plataformas.</footer>
+  <script src="manager.js"></script>
+</body>
+</html>

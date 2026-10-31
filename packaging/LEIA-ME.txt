@@ -1,0 +1,28 @@
+Baixaí — aplicativo auxiliar local
+==================================
+
+O que é: a extensão do Chrome sozinha não executa Python nem FFmpeg. Este aplicativo roda no seu
+computador, faz os downloads (yt-dlp e gallery-dl embutidos) e conversa com a extensão pelo Chrome
+(Native Messaging). Nenhum servidor público processa seus downloads.
+
+Instalar (macOS / Linux), no Terminal, dentro desta pasta:
+    ./install.sh --extension-id <ID_DA_EXTENSÃO>
+O ID aparece em chrome://extensions (modo desenvolvedor) e na aba "Ajuda" da extensão.
+Se você carregou a extensão descompactada desta versão, pode rodar apenas ./install.sh (usa o ID
+de DEFAULT_EXTENSION_IDS).
+
+Instalar (Windows 10/11), no PowerShell, dentro desta pasta:
+    .\install.ps1 -ExtensionId <ID_DA_EXTENSÃO>   ou dois cliques em instalar.bat
+(Alternativa: dê dois cliques em instalar.bat.)
+
+Depois: reinicie o Chrome. O Baixaí deve mostrar "Aplicativo local conectado". Se não, abra a aba
+Diagnóstico da extensão ou rode:  <pasta de instalação>/baixai-helper/baixai-helper doctor
+
+FFmpeg: necessário para MP3 e para combinar vídeo e áudio. O instalador pergunta antes de baixar
+(macOS arm64) ou indica como instalar. Nada é baixado sem a sua confirmação.
+
+Remover:  ./uninstall.sh   (use --purge-data para apagar fila, histórico e logs)
+          .\uninstall.ps1  (Windows; -PurgeData)
+
+Use apenas para conteúdo próprio, autorizado ou permitido. Licença: GPL-2.0-ou-posterior (LICENSE).
+Avisos de terceiros e fontes: THIRD_PARTY_NOTICES.md, CODIGO-FONTE.md e a pasta sources/.
