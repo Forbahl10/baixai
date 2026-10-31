@@ -27,8 +27,9 @@ _HOSTS = {
     "tiktok": ("tiktok.com",),
     "twitter": ("twitter.com", "x.com"),
     "soundcloud": ("soundcloud.com",),
+    "spotify": ("open.spotify.com", "play.spotify.com"),
 }
-LABELS = {"youtube": "YouTube", "instagram": "Instagram", "tiktok": "TikTok", "twitter": "X (Twitter)", "soundcloud": "SoundCloud", "direct": "Link direto"}
+LABELS = {"youtube": "YouTube", "instagram": "Instagram", "tiktok": "TikTok", "twitter": "X (Twitter)", "soundcloud": "SoundCloud", "spotify": "Spotify", "direct": "Link direto"}
 
 
 def platform_of_host(host: str) -> str | None:
@@ -92,6 +93,14 @@ def detect(url: str) -> Detected | None:
         if len(parts) == 2 and parts[1] not in ("tracks", "likes", "reposts", "albums", "sets", "popular-tracks"):
             return Detected(pid, label, "track", ("ytdlp",))
         return Detected(pid, label, "unknown", (), supported=False, note="Use o link de uma faixa ou de um set do SoundCloud.")
+
+    if pid == "spotify":
+        m = re.match(r"^/(?:intl-[a-z]{2}(?:-[a-zA-Z]{2})?/)?(track|album|playlist|episode|show|artist)/([A-Za-z0-9]{22})/?$", path)
+        if m and m.group(1) in ("track", "album", "playlist"):
+            return Detected(pid, label, "track" if m.group(1) == "track" else "playlist", ("spotify",), extra={"type": m.group(1), "id": m.group(2)})
+        if m and m.group(1) in ("episode", "show"):
+            return Detected(pid, label, "unknown", (), supported=False, note="Podcasts do Spotify não são suportados. Se o podcast também estiver no YouTube ou tiver um feed RSS, use esse link.")
+        return Detected(pid, label, "unknown", (), supported=False, note="Use o link de uma música, álbum ou playlist do Spotify (open.spotify.com/track/...).")
 
     return None
 

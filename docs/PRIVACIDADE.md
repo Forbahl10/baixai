@@ -1,6 +1,6 @@
 # Política de Privacidade — Baixaí
 
-*Última atualização: 30/10/2026. Versão do produto: 0.1.1.*
+*Última atualização: 30/10/2026. Versão do produto: 0.2.0.*
 
 O Baixaí é uma extensão do Chrome com um aplicativo auxiliar que roda **no seu computador**. Esta política descreve exatamente o que o produto faz com dados, de acordo com o comportamento implementado.
 
@@ -23,9 +23,10 @@ O Baixaí é uma extensão do Chrome com um aplicativo auxiliar que roda **no se
 ## Conexões de rede
 
 - O aplicativo auxiliar conecta-se **às plataformas de onde você escolheu baixar** (e aos servidores de mídia delas).
+- Com um link do **Spotify**, o aplicativo lê a página pública de incorporação daquele link em `open.spotify.com` (título, artista e duração) e faz uma **busca no YouTube** com o nome do artista e da música, para baixar o áudio de lá. Nenhuma conta do Spotify é usada.
 - A interface da extensão carrega **miniaturas diretamente dos servidores da plataforma** (como qualquer página que exiba a imagem). Isso revela seu endereço IP a esses servidores, como ocorre ao navegar nelas.
 - O aplicativo conecta-se ao **GitHub** (`api.github.com`, `github.com`) **somente** se você clicar em “Verificar atualização” ou “Atualizar o yt-dlp” no Diagnóstico.
-- Se você aceitar, o instalador baixa o FFmpeg de um servidor de terceiros indicado na tela, uma única vez.
+- Se você aceitar, o instalador baixa o FFmpeg e o Deno de servidores de terceiros indicados na tela (com SHA-256 conferido), uma única vez.
 - Nenhuma outra conexão é feita. A extensão não carrega nem executa código remoto.
 
 ## Controle e exclusão

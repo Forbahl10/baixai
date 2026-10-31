@@ -3,7 +3,7 @@
 **Estado: NADA foi enviado nem publicado.** Os artefatos abaixo estão prontos; os itens pendentes dependem de conta, hospedagem e revisão humana.
 
 ## Pronto (gerado neste repositório)
-- [x] ZIP da extensão sem o campo `key`: `dist/baixai-extension-0.1.1.zip` (Manifest V3, ícones 16/32/48/128).
+- [x] ZIP da extensão sem o campo `key`: `dist/baixai-extension-0.2.0.zip` (Manifest V3, ícones 16/32/48/128).
 - [x] Permissões mínimas justificadas (`permissoes.md`).
 - [x] Texto de apresentação em pt-BR (`listagem-ptbr.md`).
 - [x] Política de privacidade em arquivo (`docs/PRIVACIDADE.md`) e em HTML (`site/privacidade.html`).

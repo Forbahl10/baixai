@@ -221,6 +221,7 @@ USAGE = """Baixaí — baixe vídeos, áudios e imagens pelo terminal.
   baixai -i "LINK"              imagens de um post ou galeria
   baixai -q 720 "LINK"          vídeo de no máximo 720p
   baixai -o ~/Videos "LINK"     escolhe a pasta de destino
+  baixai "LINK DO SPOTIFY"      música, álbum ou playlist do Spotify em MP3 (o áudio vem do YouTube)
 
 Coloque sempre o link entre aspas. Os arquivos vão para a pasta Downloads/Baixai.
 Outros comandos: baixai doctor | baixai tools install-deps | baixai --help

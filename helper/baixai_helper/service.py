@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Callable
 
 from . import PROTOCOL_VERSION, __version__, dialogs, platforms, tools
-from .engines import direct, gallerydl, ytdlp
+from .engines import direct, gallerydl, spotify, ytdlp
 from .errors import BaixaiError
 from .protocol import MAX_OUT, MessageTooLarge, encode_message
 from .queue import ENGINES, JobQueue
@@ -14,7 +14,7 @@ from .settings import Settings
 from .store import Store
 from .urlsafe import validate_url
 
-ANALYZERS = {"ytdlp": ytdlp.analyze, "gallerydl": gallerydl.analyze, "direct": direct.analyze}
+ANALYZERS = {"ytdlp": ytdlp.analyze, "gallerydl": gallerydl.analyze, "direct": direct.analyze, "spotify": spotify.analyze}
 BENIGN = {"no_media", "unsupported"}
 
 

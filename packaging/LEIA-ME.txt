@@ -18,6 +18,8 @@ Usar (abra um NOVO terminal depois de instalar). Coloque SEMPRE o link entre asp
     baixai -i "LINK"                                    imagens de um post ou galeria
     baixai -q 720 "LINK"                                vídeo de no máximo 720p
     baixai -o ~/Videos "LINK"                           escolhe a pasta (padrão: Downloads/Baixai)
+    baixai "LINK DO SPOTIFY"                            música/álbum/playlist em MP3 (o áudio vem do YouTube:
+                                                        o do Spotify tem DRM e não é baixado)
     baixai --help                                       todas as opções
     baixai doctor                                       diagnóstico
     baixai tools install-deps                           (re)instala FFmpeg e Deno

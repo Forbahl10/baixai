@@ -87,3 +87,26 @@ def test_cancelamento_real_do_ytdlp_encerra_o_processo(svc, tmp_path):
     left = subprocess.run(["pgrep", "-f", f"yt_dlp.*{url.split('v=')[-1]}"], capture_output=True, text=True).stdout.strip()
     assert left == "", f"processo yt-dlp ainda vivo: {left}"
     assert not (tmp_path / "dl" / ".baixai-tmp" / j["id"]).exists()
+
+
+@pytest.mark.live
+def test_spotify_musica_vira_mp3_do_youtube(tmp_path):
+    """BAIXAI_LIVE_SPOTIFY: link de uma música do Spotify que você tem direito de copiar."""
+    url = os.environ.get("BAIXAI_LIVE_SPOTIFY")
+    if not url:
+        pytest.skip("defina BAIXAI_LIVE_SPOTIFY")
+    from baixai_helper.service import Service
+
+    svc = Service()
+    a = svc.analyze(url)
+    assert a["platform"] == "spotify" and a["modes"] == ["audio"]
+    svc.settings.update({"download_dir": str(tmp_path)})
+    svc.start()
+    try:
+        jid = svc.queue.enqueue(url, "audio", {"audio_format": "mp3"}, force=True)["job"]["id"]
+        assert svc.queue.wait_idle(600)
+        job = next(j for j in svc.queue.list(10) if j["id"] == jid)
+        assert job["state"] == "done", job.get("error")
+        assert job["files"][0]["path"].endswith(".mp3") and any("YouTube" in n for n in job["notes"])
+    finally:
+        svc.shutdown()

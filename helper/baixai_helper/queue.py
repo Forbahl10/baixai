@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Callable
 
 from . import convert, platforms
-from .engines import direct, gallerydl, ytdlp
+from .engines import direct, gallerydl, spotify, ytdlp
 from .engines.base import JobSpec, RunContext
 from .errors import BaixaiError, Cancelled
 from .friendly import classify
@@ -22,8 +22,8 @@ from .store import ACTIVE, Store
 from .urlsafe import validate_url
 
 log = logging.getLogger("baixai.queue")
-ENGINES = {"ytdlp": ytdlp, "gallerydl": gallerydl, "direct": direct}
-MODES_BY_ENGINE = {"ytdlp": ("video", "audio"), "gallerydl": ("image",), "direct": ("image", "audio", "video")}
+ENGINES = {"ytdlp": ytdlp, "gallerydl": gallerydl, "direct": direct, "spotify": spotify}
+MODES_BY_ENGINE = {"ytdlp": ("video", "audio"), "gallerydl": ("image",), "direct": ("image", "audio", "video"), "spotify": ("audio",)}
 PUBLIC_FIELDS = ("id", "url", "platform", "engine", "mode", "options", "meta", "state", "stage", "progress", "speed", "eta", "detail",
                  "notes", "attempts", "created_at", "updated_at")
 

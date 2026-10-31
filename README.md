@@ -7,6 +7,7 @@ baixai "https://www.youtube.com/watch?v=..."      # vídeo em MP4 (até 1080p)
 baixai -a "LINK"                                   # só o áudio, em MP3
 baixai -i "LINK"                                   # imagens de um post ou galeria
 baixai -q 720 -o ~/Videos "LINK"                   # no máximo 720p, numa pasta à escolha
+baixai "https://open.spotify.com/track/..."        # música do Spotify em MP3 (o áudio vem do YouTube)
 ```
 
 Usa o [yt-dlp](https://github.com/yt-dlp/yt-dlp) (vídeo e áudio), o [gallery-dl](https://github.com/mikf/gallery-dl) (imagens e galerias) e o FFmpeg (converter e juntar faixas), isolados por adaptadores. Fila persistente em SQLite, progresso na tela, cancelamento com Ctrl+C e arquivos sem sobrescrever os existentes.
@@ -43,6 +44,7 @@ Prefere ler o script antes de rodar? [`get.sh`](get.sh) e [`get.ps1`](get.ps1) s
 | `baixai "LINK"` | Baixa o vídeo em MP4 (até 1080p). Se o link só tem áudio ou imagem, baixa isso. |
 | `baixai -a "LINK"` / `--bitrate 320` | Áudio em MP3 (192 kbps por padrão). |
 | `baixai -i "LINK"` / `--formato-imagem png\|jpeg` | Imagens; converte se pedir (JPEG não tem transparência: o fundo vira branco, com aviso). |
+| `baixai "LINK DO SPOTIFY"` | Música, álbum ou playlist do Spotify em MP3. **O áudio vem do YouTube** (ver abaixo). |
 | `-q ALTURA`, `-o PASTA`, `--original` | Altura máxima, pasta de destino e manter o formato original. |
 | `--tudo`, `--itens 1,3,5` | Em listas e galerias grandes. Sem isso, o Baixaí pergunta antes de baixar tudo. |
 | `baixai doctor` | Diagnóstico (versões, FFmpeg, Deno). |
@@ -57,7 +59,18 @@ Mostramos só o que foi realmente verificado. A tabela completa (plataforma × t
 
 - **Testado com links reais**: YouTube (vídeo MP4 e áudio MP3) e imagem de post público do X, em macOS (Apple Silicon).
 - **Implementado, ainda não validado ao vivo**: Instagram, TikTok, SoundCloud, vídeo do X e playlists. Muito conteúdo dessas plataformas exige login, que **não é suportado**.
+- **Spotify** (música, álbum, playlist): metadados públicos e escolha da música no YouTube **testados ao vivo**; o download em si usa o mesmo caminho de áudio do YouTube já testado. Podcasts do Spotify não são suportados.
 - Só **conteúdo público**.
+
+### Spotify: como funciona
+
+O áudio do Spotify é protegido por **DRM**, e o Baixaí **não quebra DRM**. Então ele faz o seguinte:
+
+1. lê na página pública do link (a mesma que o Spotify usa para incorporar o player em sites) o **título, o artista e a duração** de cada música;
+2. **procura a mesma música no YouTube** e escolhe o resultado pelo título, pelo artista (canal do artista e áudio oficial "– Topic" valem mais) e pela **duração**; versões ao vivo, covers, remixes e karaokê perdem pontos, a não ser que o próprio título no Spotify seja assim;
+3. baixa o áudio do YouTube em MP3, com o nome `Artista - Música.mp3`, e mostra de qual vídeo veio.
+
+Se nenhum resultado bater com segurança, **nada é baixado** (melhor do que baixar a música errada). Pode vir outra versão da gravação: confira. A qualidade é a do YouTube (geralmente 128 a 160 kbps). Álbuns e playlists viram uma tarefa por música; listas grandes pedem confirmação (`--tudo`).
 
 ## Extensão do Chrome (opcional, experimental)
 

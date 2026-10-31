@@ -16,6 +16,7 @@ Estar listada em yt-dlp ou gallery-dl **não** é tratado como garantia. Platafo
 | **Instagram** | 🟡 reels via yt-dlp | 🟡 | 🟡 posts/carrosséis via gallery-dl | ❌ |
 | **TikTok** | 🟡 yt-dlp | 🟡 | 🟡 fotos via gallery-dl | ❌ |
 | **SoundCloud** | ❌ | 🟡 yt-dlp (MP3 é reconvertido da fonte) | ❌ | 🟡 sets |
+| **Spotify** | ❌ | 🟡 **o áudio vem do YouTube** (o do Spotify tem DRM e não é baixado): metadados públicos e escolha no YouTube testados ao vivo; download completo por link do Spotify ainda não testado | ❌ | 🟡 álbuns e playlists (uma tarefa por música; a análise de um álbum real foi testada) · podcasts ❌ |
 | **Link direto** (imagem/áudio/vídeo por URL) | ⚠️ só formato original | ✅ áudio direto → MP3 (FFmpeg) | ✅ imagem direta, original/JPEG/PNG, com aviso de transparência | ❌ |
 
 ## Limitações conhecidas

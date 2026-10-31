@@ -9,6 +9,7 @@ from pathlib import Path
 from .. import paths, platforms
 from ..errors import BaixaiError
 from ..friendly import classify
+from ..sanitize import sanitize_component
 from ..tools import engine_cmd, ffmpeg_path, js_runtime
 from .base import JobSpec, Result, RunContext, run_capture, run_streaming
 
@@ -48,13 +49,20 @@ def video_selector(height: int | None, container: str) -> str:
     return f"bv*{h}+ba/b{h}"
 
 
+def _out_template(spec: JobSpec) -> str:
+    name = spec.meta.get("filename") if isinstance(spec.meta, dict) else None
+    if name:  # nome fixo, sanitizado; "%" é escapado para o yt-dlp não interpretar como campo
+        return sanitize_component(str(name), max_bytes=180).replace("%", "%%") + ".%(ext)s"
+    return "%(title).180B.%(ext)s"
+
+
 def build_download_args(base: list[str], spec: JobSpec, outdir: Path, settings: dict) -> list[str]:
     o = spec.options
     args = [*base, *common_args(settings), "--newline", "--progress", "--progress-delta", "0.5",
             "--progress-template", "download:BAIXAI_P %(progress.status)s %(progress.downloaded_bytes)s %(progress.total_bytes)s %(progress.total_bytes_estimate)s %(progress.speed)s %(progress.eta)s",
             "--progress-template", "postprocess:BAIXAI_PP %(progress.postprocessor)s %(progress.status)s",
             "--print", "after_move:BAIXAI_FILE %(filepath)s",
-            "-P", str(outdir), "-o", "%(title).180B.%(ext)s", "--no-overwrites"]
+            "-P", str(outdir), "-o", _out_template(spec), "--no-overwrites"]
     if spec.mode == "audio":
         fmt = o.get("audio_format", "mp3")
         args += ["-f", "ba/b", "-x", "--audio-format", "mp3" if fmt == "mp3" else "best", "--embed-metadata", "--embed-thumbnail", "--convert-thumbnails", "jpg"]

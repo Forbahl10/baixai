@@ -23,7 +23,7 @@ export interface VideoFormat {
 }
 export interface GalleryItem { index: number; url: string; name: string; ext: string; kind: "image" | "video" | "audio" | "file"; width: number | null; height: number | null }
 export interface Analysis {
-  url: string; platform: string; platform_label: string; engine: "ytdlp" | "gallerydl" | "direct"; kind: string; content_kind: string;
+  url: string; platform: string; platform_label: string; engine: "ytdlp" | "gallerydl" | "direct" | "spotify"; kind: string; content_kind: string;
   title: string | null; author: string | null; thumbnail: string | null; duration?: number | null; size?: number;
   modes: Mode[]; warnings: string[]; needs_confirmation: boolean; entry_count?: number; truncated?: boolean; truncated_list?: boolean;
   entries?: { index: number; url: string; title: string | null; duration: number | null }[];

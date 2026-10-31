@@ -30,8 +30,9 @@ const DOMAINS: Record<string, string[]> = {
   tiktok: ["tiktok.com"],
   twitter: ["twitter.com", "x.com"],
   soundcloud: ["soundcloud.com"],
+  spotify: ["open.spotify.com"],
 };
-export const PLATFORM_LABEL: Record<string, string> = { youtube: "YouTube", instagram: "Instagram", tiktok: "TikTok", twitter: "X (Twitter)", soundcloud: "SoundCloud", direct: "Link direto" };
+export const PLATFORM_LABEL: Record<string, string> = { youtube: "YouTube", instagram: "Instagram", tiktok: "TikTok", twitter: "X (Twitter)", soundcloud: "SoundCloud", spotify: "Spotify", direct: "Link direto" };
 
 export function platformOf(url: string): string | null {
   let host: string;
@@ -46,6 +47,7 @@ export function platformOf(url: string): string | null {
 export const MENU_PATTERNS: string[] = [
   "*://*.youtube.com/*", "*://youtu.be/*", "*://*.instagram.com/*", "*://*.tiktok.com/*",
   "*://*.twitter.com/*", "*://x.com/*", "*://*.x.com/*", "*://soundcloud.com/*", "*://*.soundcloud.com/*",
+  "*://open.spotify.com/*",
 ];
 
 /** Monta a URL da página de gerenciamento que já abre analisando um link. */
