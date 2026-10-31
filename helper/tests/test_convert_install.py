@@ -47,7 +47,8 @@ def test_instala_e_remove_manifesto(tmp_path, monkeypatch):
     assert m["allowed_origins"] == [f"chrome-extension://{ext}/", f"chrome-extension://{'b' * 32}/"]
     assert all(s["valid"] and s["path_exists"] for s in install_host.status())
     removed = install_host.uninstall(["chrome", "chromium"])
-    assert len(removed) == 2 and install_host.status() == []
+    # No Windows há um único arquivo de manifesto, compartilhado pelos navegadores via registro; nos demais, um por navegador.
+    assert len(removed) == (1 if sys.platform == "win32" else 2) and install_host.status() == []
 
 
 @pytest.mark.parametrize("bad", ["", "abc", "A" * 32, "q" * 32, "a" * 31, "chrome-extension://" + "a" * 32])
