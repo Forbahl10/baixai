@@ -128,6 +128,10 @@ assert run([str(exe), "--engine", "gallery-dl", "--version"]).stdout.strip()
 bin_dir = app_root / "bin"
 ffmpeg, ffprobe = bin_dir / ("ffmpeg.exe" if WIN else "ffmpeg"), bin_dir / ("ffprobe.exe" if WIN else "ffprobe")
 assert ffmpeg.is_file() and ffprobe.is_file()
+step("Deno: instalação forçada (as máquinas de CI já têm Node, então 'se faltar' o pularia) e preferência sobre o Node")
+run(baixai + ["tools", "install-deno", "--force"])
+assert (bin_dir / ("deno.exe" if WIN else "deno")).is_file()
+assert "Runtime JS: deno" in run(baixai + ["doctor"]).stdout, "o Deno instalado deveria ser o runtime preferido"
 media = tmp / "media"
 media.mkdir()
 run([str(ffmpeg), "-v", "error", "-f", "lavfi", "-i", "sine=frequency=440:duration=2", "-y", str(media / "tom.wav")])
