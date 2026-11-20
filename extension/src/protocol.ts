@@ -12,7 +12,7 @@ export interface ApiError { code: string; message: string; detail?: string; retr
 
 export interface Job {
   id: string; url: string; platform: string | null; engine: string; mode: Mode;
-  options: Record<string, unknown>; meta: { title?: string; author?: string; thumbnail?: string; platform?: string; count?: number };
+  options: Record<string, unknown>; meta: { title?: string; author?: string; thumbnail?: string; platform?: string; count?: number; duration?: number; playlist?: string; playlist_index?: number };
   state: JobState; stage: string | null; progress: number | null; speed: number | null; eta: number | null; detail: string | null;
   files: { name: string; path: string }[]; notes: string[]; error: ApiError | null; attempts: number; created_at: number; updated_at: number;
 }
@@ -23,10 +23,10 @@ export interface VideoFormat {
 }
 export interface GalleryItem { index: number; url: string; name: string; ext: string; kind: "image" | "video" | "audio" | "file"; width: number | null; height: number | null }
 export interface Analysis {
-  url: string; platform: string; platform_label: string; engine: "ytdlp" | "gallerydl" | "direct" | "spotify"; kind: string; content_kind: string;
+  url: string; platform: string; platform_label: string; engine: "ytdlp" | "gallerydl" | "direct" | "spotify" | "applemusic"; kind: string; content_kind: string;
   title: string | null; author: string | null; thumbnail: string | null; duration?: number | null; size?: number;
   modes: Mode[]; warnings: string[]; needs_confirmation: boolean; entry_count?: number; truncated?: boolean; truncated_list?: boolean;
-  entries?: { index: number; url: string; title: string | null; duration: number | null }[];
+  entries?: { index: number; url: string; title: string | null; artist?: string; duration: number | null }[];
   video?: { formats: VideoFormat[] };
   audio?: { source_codec: string | null; source_abr: number | null; mp3_bitrates: number[]; can_embed_cover: boolean; note: string };
   image?: { items: GalleryItem[]; total: number; formats: ("original" | "jpeg" | "png")[]; note: string };

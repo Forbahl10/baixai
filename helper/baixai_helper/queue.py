@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Callable
 
 from . import convert, platforms
-from .engines import direct, gallerydl, spotify, ytdlp
+from .engines import applemusic, direct, gallerydl, spotify, ytdlp
 from .engines.base import JobSpec, RunContext
 from .errors import BaixaiError, Cancelled
 from .friendly import classify
@@ -22,8 +22,8 @@ from .store import ACTIVE, Store
 from .urlsafe import validate_url
 
 log = logging.getLogger("baixai.queue")
-ENGINES = {"ytdlp": ytdlp, "gallerydl": gallerydl, "direct": direct, "spotify": spotify}
-MODES_BY_ENGINE = {"ytdlp": ("video", "audio"), "gallerydl": ("image",), "direct": ("image", "audio", "video"), "spotify": ("audio",)}
+ENGINES = {"ytdlp": ytdlp, "gallerydl": gallerydl, "direct": direct, "spotify": spotify, "applemusic": applemusic}
+MODES_BY_ENGINE = {"ytdlp": ("video", "audio"), "gallerydl": ("image",), "direct": ("image", "audio", "video"), "spotify": ("audio",), "applemusic": ("audio",)}
 PUBLIC_FIELDS = ("id", "url", "platform", "engine", "mode", "options", "meta", "state", "stage", "progress", "speed", "eta", "detail",
                  "notes", "attempts", "created_at", "updated_at")
 
@@ -308,6 +308,8 @@ class JobQueue:
         parts: list[str] = []
         if s["organize_by_platform"]:
             parts.append(platforms.LABELS.get(spec.platform, spec.platform))
+        if spec.platform == "applemusic" and (spec.meta or {}).get("playlist"):
+            parts.append(spec.meta["playlist"])
         author = (spec.meta or {}).get("author")
         if s["organize_by_author"] and author:
             parts.append(author)
@@ -315,7 +317,8 @@ class JobQueue:
         dest.mkdir(parents=True, exist_ok=True)
         final: list[Path] = []
         for f in files:
-            target = unique_path(dest / sanitize_filename(f.name))
+            prefix = f'{spec.meta["playlist_index"]:02d} - ' if spec.platform == "applemusic" and isinstance((spec.meta or {}).get("playlist_index"), int) else ""
+            target = unique_path(dest / sanitize_filename(prefix + f.name))
             shutil.move(str(f), str(target))
             final.append(target)
         return final, dest

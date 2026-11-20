@@ -60,7 +60,8 @@ Mostramos só o que foi realmente verificado. A tabela completa (plataforma × t
 - **Testado com links reais**: YouTube (vídeo MP4 e áudio MP3) e imagem de post público do X, em macOS (Apple Silicon).
 - **Implementado, ainda não validado ao vivo**: Instagram, TikTok, SoundCloud, vídeo do X e playlists. Muito conteúdo dessas plataformas exige login, que **não é suportado**.
 - **Spotify** (música, álbum, playlist): metadados públicos e escolha da música no YouTube **testados ao vivo**; o download em si usa o mesmo caminho de áudio do YouTube já testado. Podcasts do Spotify não são suportados.
-- Só **conteúdo público**.
+- **Apple Music** (playlist na extensão): abra a playlist na sua conta no navegador, clique no Baixaí e em **Usar aba atual**. A extensão lê título, artista e duração de cada faixa visível na página (até 200) e o aplicativo procura o áudio correspondente no YouTube. O link da biblioteca não funciona sozinho no terminal, pois só a sessão autenticada mostra as faixas. Nenhum cookie, token ou áudio do Apple Music é enviado ao aplicativo. As faixas são organizadas em uma pasta com o nome da playlist, na pasta de downloads configurada. Este fluxo ainda não foi validado ao vivo na extensão.
+- Só **mídia pública**. A extensão pode ler os metadados de uma playlist do Apple Music aberta na sua sessão; o Baixaí não recebe credenciais nem baixa áudio do Apple Music.
 
 ### Spotify: como funciona
 

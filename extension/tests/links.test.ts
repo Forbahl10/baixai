@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { extractUrls, managerUrl, MAX_BATCH, platformOf, readHashUrl } from "../src/links";
+import { isApplePlaylist, sameApplePlaylist } from "../src/applemusic";
 
 test("extractUrls: vários formatos, dedupe e descarte de inválidos", () => {
   const r = extractUrls(`
@@ -25,9 +26,18 @@ test("platformOf reconhece só domínios reais", () => {
   assert.equal(platformOf("https://music.youtube.com/watch?v=1"), "youtube");
   assert.equal(platformOf("https://x.com/a/status/1"), "twitter");
   assert.equal(platformOf("https://vm.tiktok.com/abc"), "tiktok");
+  assert.equal(platformOf("https://music.apple.com/br/library/playlist/p.abc"), "applemusic");
   assert.equal(platformOf("https://evilyoutube.com/watch"), null);
   assert.equal(platformOf("https://youtube.com.evil.io/watch"), null);
   assert.equal(platformOf("não é url"), null);
+});
+
+test("Apple Music: playlist da biblioteca corresponde à mesma aba com ou sem região", () => {
+  assert.equal(isApplePlaylist("https://music.apple.com/br/library/playlist/p.7PkeAkzi0pJ5o2B"), true);
+  assert.equal(isApplePlaylist("https://music.apple.com/br/playlist/minha-lista/pl.u-abc_123"), true);
+  assert.equal(sameApplePlaylist("https://music.apple.com/br/library/playlist/p.7PkeAkzi0pJ5o2B", "https://music.apple.com/library/playlist/p.7PkeAkzi0pJ5o2B"), true);
+  assert.equal(sameApplePlaylist("https://music.apple.com/br/library/playlist/p.abc", "https://music.apple.com/br/library/playlist/p.xyz"), false);
+  assert.equal(isApplePlaylist("https://music.apple.com.evil.test/br/library/playlist/p.abc"), false);
 });
 
 test("managerUrl / readHashUrl fazem ida e volta", () => {

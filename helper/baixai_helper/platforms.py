@@ -28,8 +28,9 @@ _HOSTS = {
     "twitter": ("twitter.com", "x.com"),
     "soundcloud": ("soundcloud.com",),
     "spotify": ("open.spotify.com", "play.spotify.com"),
+    "applemusic": ("music.apple.com",),
 }
-LABELS = {"youtube": "YouTube", "instagram": "Instagram", "tiktok": "TikTok", "twitter": "X (Twitter)", "soundcloud": "SoundCloud", "spotify": "Spotify", "direct": "Link direto"}
+LABELS = {"youtube": "YouTube", "instagram": "Instagram", "tiktok": "TikTok", "twitter": "X (Twitter)", "soundcloud": "SoundCloud", "spotify": "Spotify", "applemusic": "Apple Music", "direct": "Link direto"}
 
 
 def platform_of_host(host: str) -> str | None:
@@ -101,6 +102,13 @@ def detect(url: str) -> Detected | None:
         if m and m.group(1) in ("episode", "show"):
             return Detected(pid, label, "unknown", (), supported=False, note="Podcasts do Spotify não são suportados. Se o podcast também estiver no YouTube ou tiver um feed RSS, use esse link.")
         return Detected(pid, label, "unknown", (), supported=False, note="Use o link de uma música, álbum ou playlist do Spotify (open.spotify.com/track/...).")
+
+    if pid == "applemusic":
+        if re.match(r"^/(?:[a-z]{2}/)?(?:library/)?playlist/(?:[^/]+/)?[A-Za-z0-9._-]+/?$", path):
+            return Detected(pid, label, "playlist", ("applemusic",))
+        if re.match(r"^/(?:[a-z]{2}/)?song/[^/]+/\d+/?$", path):
+            return Detected(pid, label, "track", ("applemusic",))
+        return Detected(pid, label, "unknown", (), supported=False, note="Use o link de uma playlist ou música do Apple Music.")
 
     return None
 
