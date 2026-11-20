@@ -135,7 +135,9 @@ OPTIONS = {
         "engine": {"t": "enum", "v": ["ytdlp", "gallerydl", "direct"]},
     },
 }
-META = {"t": "obj", "opt": {"title": S(400), "author": S(200), "thumbnail": S(2048), "platform": S(30), "count": I(0, 100000)}}
+META = {"t": "obj", "opt": {"title": S(400), "author": S(200), "thumbnail": S(2048), "platform": S(30), "count": I(0, 100000), "duration": I(1, 100000), "playlist": S(200), "playlist_index": I(1, 2000)}}
+APPLE_TRACK = {"t": "obj", "req": {"url": S(), "title": S(400), "artist": S(200), "duration": I(1, 100000)}}
+APPLE_PAGE = {"t": "obj", "req": {"title": S(200), "tracks": {"t": "list", "of": APPLE_TRACK, "max": 200}}}
 MODE = {"t": "enum", "v": list(MODES)}
 
 SETTINGS = {
@@ -158,7 +160,7 @@ SETTINGS = {
 
 COMMANDS: dict[str, dict] = {
     "hello": {"t": "obj"},
-    "analyze": {"t": "obj", "req": {"url": S()}},
+    "analyze": {"t": "obj", "req": {"url": S()}, "opt": {"page": APPLE_PAGE}},
     "enqueue": {"t": "obj", "req": {"url": S(), "mode": MODE}, "opt": {"options": OPTIONS, "meta": META, "force": B}},
     "enqueue_batch": {
         "t": "obj",

@@ -1,6 +1,6 @@
 # Matriz de suporte (plataforma × tipo de conteúdo)
 
-Atualizada em **30/10/2026**. Legenda:
+Atualizada em **19/11/2026**. Legenda:
 
 - ✅ **Implementado e testado** — executado de verdade (rede + plataforma) nesta versão, com a data e o ambiente indicados.
 - 🟡 **Implementado, não validado ao vivo** — o código existe e os testes com fixtures passam, mas nenhum download real foi feito.
@@ -17,6 +17,7 @@ Estar listada em yt-dlp ou gallery-dl **não** é tratado como garantia. Platafo
 | **TikTok** | 🟡 yt-dlp | 🟡 | 🟡 fotos via gallery-dl | ❌ |
 | **SoundCloud** | ❌ | 🟡 yt-dlp (MP3 é reconvertido da fonte) | ❌ | 🟡 sets |
 | **Spotify** | ❌ | 🟡 **o áudio vem do YouTube** (o do Spotify tem DRM e não é baixado): metadados públicos e escolha no YouTube testados ao vivo; download completo por link do Spotify ainda não testado | ❌ | 🟡 álbuns e playlists (uma tarefa por música; a análise de um álbum real foi testada) · podcasts ❌ |
+| **Apple Music** | ❌ | 🟡 **o áudio vem do YouTube**; a extensão lê metadados da playlist na aba autenticada, sem cookies ou DRM | ❌ | 🟡 playlists de até 200 faixas na aba atual; fluxo completo na extensão ainda não validado ao vivo |
 | **Link direto** (imagem/áudio/vídeo por URL) | ⚠️ só formato original | ✅ áudio direto → MP3 (FFmpeg) | ✅ imagem direta, original/JPEG/PNG, com aviso de transparência | ❌ |
 
 ## Limitações conhecidas

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Callable
 
 from . import PROTOCOL_VERSION, __version__, dialogs, platforms, tools
-from .engines import direct, gallerydl, spotify, ytdlp
+from .engines import applemusic, direct, gallerydl, spotify, ytdlp
 from .errors import BaixaiError
 from .protocol import MAX_OUT, MessageTooLarge, encode_message
 from .queue import ENGINES, JobQueue
@@ -32,12 +32,15 @@ class Service:
         self.queue.shutdown()
 
     # ------------------------------------------------------------------ análise
-    def analyze(self, url: str) -> dict:
+    def analyze(self, url: str, page: dict | None = None) -> dict:
         checked = validate_url(url)
         det = platforms.detect(checked.url)
         settings = self.settings.all()
         if det is not None and not det.supported:
             raise BaixaiError("unsupported", det.note or "Esse tipo de link não é suportado.")
+        if det and det.platform == "applemusic":
+            result = applemusic.analyze(checked.url, det, settings, page)
+            return self._finish_analysis(result, checked.url, det, settings)
         order = det.engines if det else ("direct",)
         errors: list[BaixaiError] = []
         result: dict | None = None
@@ -49,7 +52,10 @@ class Service:
                 errors.append(e)
         if result is None:
             raise next((e for e in errors if e.code not in BENIGN), errors[0])
-        result.update(url=checked.url, platform=det.platform if det else "direct",
+        return self._finish_analysis(result, checked.url, det, settings)
+
+    def _finish_analysis(self, result: dict, url: str, det, settings: dict) -> dict:
+        result.update(url=url, platform=det.platform if det else "direct",
                       platform_label=platforms.LABELS[det.platform if det else "direct"], content_kind=det.kind if det else "direct")
         result.setdefault("warnings", [])
         if det and det.note:
@@ -93,7 +99,7 @@ class Service:
                 "active_jobs": len(self.store.by_state(("waiting", "analyzing", "downloading", "converting")))}
 
     def cmd_analyze(self, p):
-        return self.analyze(p["url"])
+        return self.analyze(p["url"], p.get("page"))
 
     def cmd_enqueue(self, p):
         return self.queue.enqueue(p["url"], p["mode"], p.get("options"), p.get("meta"), p.get("force", False))

@@ -1,4 +1,5 @@
 import { formatBytes, formatDuration } from "../format";
+import { captureAppleMusic, isApplePlaylist, sameApplePlaylist } from "../applemusic";
 import { extractUrls } from "../links";
 import type { Analysis, EnqueueResult, GalleryItem, Job, Mode, VideoFormat } from "../protocol";
 import { announce, h, icon } from "./dom";
@@ -35,6 +36,7 @@ function radios(name: string, items: [string, string][], value: string, onChange
 }
 
 export function mountAdd(root: HTMLElement, client: UiClient, opts: AddOptions): void {
+  let sourceTabId: number | null = null;
   const input = h("textarea", { id: "url-input", class: "input url-input", rows: opts.compact ? 2 : 3, placeholder: "Cole aqui o link (ou vários, um por linha)", spellcheck: false, autocomplete: "off", autocapitalize: "off" });
   const analyzeBtn = h("button", { class: "btn btn-primary", type: "button" }, icon("link"), "Analisar");
   const row = h("div", { class: "row" });
@@ -43,7 +45,7 @@ export function mountAdd(root: HTMLElement, client: UiClient, opts: AddOptions):
     tabBtn.addEventListener("click", async () => {
       try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tab?.url && /^https?:/i.test(tab.url)) { input.value = tab.url; void analyze(); }
+        if (tab?.url && /^https?:/i.test(tab.url)) { input.value = tab.url; sourceTabId = tab.id ?? null; void analyze(); }
         else setStatus("A aba atual não é uma página http(s) analisável.", "error");
       } catch { setStatus("Não foi possível ler a aba atual.", "error"); }
     });
@@ -74,7 +76,16 @@ export function mountAdd(root: HTMLElement, client: UiClient, opts: AddOptions):
     setStatus("Analisando o link…");
     result.appendChild(h("div", { class: "skeleton", "aria-hidden": "true" }));
     try {
-      const a = await client.call<Analysis>("analyze", { url: valid[0] });
+      const url = valid[0]!;
+      let page;
+      if (isApplePlaylist(url)) {
+        const tab = sourceTabId !== null ? await chrome.tabs.get(sourceTabId) : (await chrome.tabs.query({ active: true, currentWindow: true }))[0];
+        if (!tab?.id || !tab.url || !sameApplePlaylist(url, tab.url)) {
+          throw new Error("Abra essa playlist do Apple Music na aba atual e clique em 'Usar aba atual' na extensão.");
+        }
+        page = await captureAppleMusic(tab.id);
+      }
+      const a = await client.call<Analysis>("analyze", { url, ...(page ? { page } : {}) });
       result.replaceChildren();
       setStatus("");
       renderAnalysis(a);
@@ -98,7 +109,7 @@ export function mountAdd(root: HTMLElement, client: UiClient, opts: AddOptions):
     const meta = [a.platform_label, a.author, a.duration ? formatDuration(a.duration) : "", a.size ? formatBytes(a.size) : ""].filter(Boolean).join(" · ");
     const card = h("section", { class: "card", "aria-label": "Prévia do conteúdo" },
       h("div", { class: "preview" }, thumb, h("div", { class: "preview-text" }, h("h2", { class: "card-title clamp", text: a.title ?? "Sem título", title: a.title ?? "" }), h("p", { class: "muted", text: meta }),
-        isPlaylist || (a.entry_count ?? 0) > 1 ? h("p", { class: "badge", text: `${a.entry_count} ${isPlaylist ? "vídeos" : "arquivos"}${a.truncated ? " (ou mais)" : ""}` }) : null)));
+        isPlaylist || (a.entry_count ?? 0) > 1 ? h("p", { class: "badge", text: `${a.entry_count} ${a.platform === "applemusic" || a.platform === "spotify" ? "músicas" : isPlaylist ? "vídeos" : "arquivos"}${a.truncated ? " (ou mais)" : ""}` }) : null)));
     for (const w of a.warnings) card.appendChild(h("p", { class: "notice", role: "note" }, icon("alert"), w));
 
     const renderModes = () => {
@@ -132,7 +143,9 @@ export function mountAdd(root: HTMLElement, client: UiClient, opts: AddOptions):
       }
       try {
         if (isPlaylist) {
-          const entries = (a.entries ?? []).map((e) => ({ url: e.url, meta: cleanMeta({ title: e.title, author: a.author, platform: a.platform }) }));
+          const entries = (a.entries ?? []).map((e) => ({ url: e.url, meta: cleanMeta(a.platform === "applemusic"
+            ? { title: e.title, author: e.artist, duration: e.duration, playlist: a.title, playlist_index: e.index, platform: a.platform }
+            : { title: e.title, author: a.author, platform: a.platform }) }));
           const r = await client.call<{ results: ({ url: string; error?: { message: string }; duplicate?: string | null; job?: Job })[] }>("enqueue_batch", { entries, mode, options, force });
           const ok = r.results.filter((x) => !x.error && !x.duplicate).length;
           const dup = r.results.filter((x) => x.duplicate).length;
@@ -207,7 +220,7 @@ export function mountAdd(root: HTMLElement, client: UiClient, opts: AddOptions):
 function cleanMeta(m: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(m)) {
-    if (typeof v === "string" && v) out[k] = v.slice(0, k === "thumbnail" ? 2048 : 400);
+    if (typeof v === "string" && v) out[k] = v.slice(0, k === "thumbnail" ? 2048 : k === "author" || k === "playlist" ? 200 : 400);
     else if (typeof v === "number" && Number.isInteger(v) && v >= 0 && v <= 100000) out[k] = v;
   }
   if (typeof out["thumbnail"] === "string" && (out["thumbnail"] as string).length >= 2048) delete out["thumbnail"];

@@ -1,14 +1,14 @@
 # Política de Privacidade — Baixaí
 
-*Última atualização: 30/10/2026. Versão do produto: 0.2.0.*
+*Última atualização: 19/11/2026. Versão do produto: 0.2.0.*
 
 O Baixaí é uma extensão do Chrome com um aplicativo auxiliar que roda **no seu computador**. Esta política descreve exatamente o que o produto faz com dados, de acordo com o comportamento implementado.
 
 ## Resumo
 
 - **Sem telemetria, sem contas, sem anúncios, sem venda de dados.** Não existe servidor do Baixaí que receba dados seus.
-- **Nada do seu histórico de navegação é coletado.** A extensão só lê o endereço da aba atual quando você clica em “Usar aba atual”, e o menu de contexto só usa o link em que você clicou.
-- **Senhas, cookies e logins não são lidos nem usados.** O produto baixa apenas conteúdo público.
+- **Nada do seu histórico de navegação é coletado.** A extensão só lê o endereço da aba atual quando você clica em “Usar aba atual”; se for uma playlist do Apple Music, lê também seus títulos, artistas, durações e links. O menu de contexto só usa o link em que você clicou.
+- **Senhas, cookies e tokens não são lidos nem usados.** O produto baixa apenas mídia pública. Playlists privadas do Apple Music podem fornecer metadados pela aba já autenticada.
 
 ## Dados tratados e para quê
 
@@ -16,6 +16,7 @@ O Baixaí é uma extensão do Chrome com um aplicativo auxiliar que roda **no se
 |---|---|---|---|
 | Links que você cola, o endereço da aba atual (apenas ao clicar) ou o link do menu de contexto | quando você pede uma análise ou download | identificar a mídia e baixá-la | enviado **somente ao aplicativo auxiliar no seu computador**; o app acessa o site de origem (por exemplo, YouTube) para obter o conteúdo, como o seu navegador faria |
 | Título, autor, miniatura e formatos do conteúdo | durante a análise | mostrar a prévia e as opções | memória e fila local |
+| Títulos, artistas, durações e links das faixas de uma playlist do Apple Music | quando você usa a aba atual dessa playlist | procurar as mesmas músicas no YouTube e organizar os downloads | enviados somente ao aplicativo auxiliar local; metadados da fila ficam no SQLite local |
 | Fila e histórico de downloads (links, opções, estado, caminhos dos arquivos) | enquanto existirem | retomar a fila após reiniciar e mostrar o histórico | banco SQLite local: `~/Library/Application Support/Baixai` (macOS), `%APPDATA%\Baixai` (Windows), `~/.local/share/baixai` (Linux) |
 | Registros (logs) de execução | durante os downloads | diagnóstico de falhas | arquivos locais, com query strings, tokens e cookies removidos; no máximo ~3 MB |
 | Preferências (pasta, formatos, concorrência) | quando você salva | lembrar suas escolhas | banco local; o tema da interface fica no armazenamento local da extensão |
@@ -24,6 +25,7 @@ O Baixaí é uma extensão do Chrome com um aplicativo auxiliar que roda **no se
 
 - O aplicativo auxiliar conecta-se **às plataformas de onde você escolheu baixar** (e aos servidores de mídia delas).
 - Com um link do **Spotify**, o aplicativo lê a página pública de incorporação daquele link em `open.spotify.com` (título, artista e duração) e faz uma **busca no YouTube** com o nome do artista e da música, para baixar o áudio de lá. Nenhuma conta do Spotify é usada.
+- Com uma playlist do **Apple Music** aberta no navegador, a extensão lê os metadados das faixas na página e os envia ao aplicativo local. Ele busca os áudios correspondentes no YouTube. Não consulta a conta do Apple Music nem copia o áudio de lá.
 - A interface da extensão carrega **miniaturas diretamente dos servidores da plataforma** (como qualquer página que exiba a imagem). Isso revela seu endereço IP a esses servidores, como ocorre ao navegar nelas.
 - O aplicativo conecta-se ao **GitHub** (`api.github.com`, `github.com`) **somente** se você clicar em “Verificar atualização” ou “Atualizar o yt-dlp” no Diagnóstico.
 - Se você aceitar, o instalador baixa o FFmpeg e o Deno de servidores de terceiros indicados na tela (com SHA-256 conferido), uma única vez.

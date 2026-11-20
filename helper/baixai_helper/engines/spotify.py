@@ -162,9 +162,9 @@ def search_query(track: dict) -> str:
     return re.sub(r"[\x00-\x1f\x7f]", " ", q)[:200]
 
 
-def find_on_youtube(track: dict, settings: dict, runner=run_capture) -> tuple[dict, int]:
+def find_on_youtube(track: dict, settings: dict, runner=run_capture, query: str | None = None) -> tuple[dict, int]:
     args = [*ytdlp._cmd(settings), *ytdlp.common_args(settings, playlist=True), "-J", "--flat-playlist",
-            "--", f"ytsearch{SEARCH_RESULTS}:{search_query(track)}"]  # depois de "--": o texto vindo do Spotify nunca vira opção
+            "--", f"ytsearch{SEARCH_RESULTS}:{query or search_query(track)}"]  # depois de "--": o texto vindo do Spotify nunca vira opção
     try:
         rc, out, err = runner(args, timeout=120)
     except subprocess.TimeoutExpired:

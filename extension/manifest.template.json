@@ -12,7 +12,7 @@
     "default_icon": { "16": "icons/icon-16.png", "32": "icons/icon-32.png" }
   },
   "background": { "service_worker": "background.js" },
-  "permissions": ["nativeMessaging", "contextMenus", "activeTab"],
+  "permissions": ["nativeMessaging", "contextMenus", "activeTab", "scripting"],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; img-src 'self' https: data:; style-src 'self'; connect-src 'none'; frame-ancestors 'none'"
   }
