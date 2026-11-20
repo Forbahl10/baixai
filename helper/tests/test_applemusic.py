@@ -18,6 +18,7 @@ PAGE = {"title": "SOM DE NOIA", "tracks": [{"url": SONG, "title": "Discombobulat
 
 def test_detects_apple_music_playlist_and_song():
     assert platforms.detect(PLAYLIST).kind == "playlist"
+    assert platforms.detect("https://music.apple.com/br/playlist/minha-lista/pl.u-abc_123").kind == "playlist"
     assert platforms.detect(SONG).kind == "track"
     assert platforms.detect(PLAYLIST).platform == "applemusic"
 

@@ -5,7 +5,7 @@ export interface ApplePage { title: string; tracks: AppleTrack[] }
 export function isApplePlaylist(url: string): boolean {
   try {
     const u = new URL(url);
-    return u.hostname === "music.apple.com" && /^\/(?:[a-z]{2}\/)?(?:library\/)?playlist\/[A-Za-z0-9.]+\/?$/.test(u.pathname);
+    return u.hostname === "music.apple.com" && /^\/(?:[a-z]{2}\/)?(?:library\/)?playlist\/(?:[^/]+\/)?[A-Za-z0-9._-]+\/?$/.test(u.pathname);
   } catch { return false; }
 }
 

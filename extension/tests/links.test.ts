@@ -34,6 +34,7 @@ test("platformOf reconhece só domínios reais", () => {
 
 test("Apple Music: playlist da biblioteca corresponde à mesma aba com ou sem região", () => {
   assert.equal(isApplePlaylist("https://music.apple.com/br/library/playlist/p.7PkeAkzi0pJ5o2B"), true);
+  assert.equal(isApplePlaylist("https://music.apple.com/br/playlist/minha-lista/pl.u-abc_123"), true);
   assert.equal(sameApplePlaylist("https://music.apple.com/br/library/playlist/p.7PkeAkzi0pJ5o2B", "https://music.apple.com/library/playlist/p.7PkeAkzi0pJ5o2B"), true);
   assert.equal(sameApplePlaylist("https://music.apple.com/br/library/playlist/p.abc", "https://music.apple.com/br/library/playlist/p.xyz"), false);
   assert.equal(isApplePlaylist("https://music.apple.com.evil.test/br/library/playlist/p.abc"), false);

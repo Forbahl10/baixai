@@ -104,7 +104,7 @@ def detect(url: str) -> Detected | None:
         return Detected(pid, label, "unknown", (), supported=False, note="Use o link de uma música, álbum ou playlist do Spotify (open.spotify.com/track/...).")
 
     if pid == "applemusic":
-        if re.match(r"^/(?:[a-z]{2}/)?(?:library/)?playlist/[A-Za-z0-9.]+/?$", path):
+        if re.match(r"^/(?:[a-z]{2}/)?(?:library/)?playlist/(?:[^/]+/)?[A-Za-z0-9._-]+/?$", path):
             return Detected(pid, label, "playlist", ("applemusic",))
         if re.match(r"^/(?:[a-z]{2}/)?song/[^/]+/\d+/?$", path):
             return Detected(pid, label, "track", ("applemusic",))
