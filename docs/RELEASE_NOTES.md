@@ -1,3 +1,9 @@
+# Baixaí v0.3.0
+
+- Importa playlists do Apple Music abertas na aba atual do navegador. A extensão lê título, artista e duração das faixas; o aplicativo busca versões correspondentes no YouTube e baixa MP3s em uma pasta com o nome da playlist, mantendo a ordem.
+- Não lê cookies ou tokens e não baixa áudio do Apple Music. A sessão do navegador é usada apenas para visualizar os metadados da playlist.
+- O uso da extensão com Apple Music ainda precisa de validação manual em um navegador real. Playlists com mais de 200 faixas não são importadas parcialmente.
+
 ## Baixaí v0.2.0 — pré-lançamento
 
 **Novo: Spotify.** `baixai "LINK DO SPOTIFY"` baixa música, álbum ou playlist em MP3. O áudio do Spotify tem DRM e **não** é baixado: o Baixaí lê o título, o artista e a duração na página pública do link, **procura a mesma música no YouTube** e baixa o áudio de lá, mostrando de qual vídeo veio. Se não achar uma correspondência confiável, não baixa nada. Pode vir outra versão da gravação: confira. Podcasts do Spotify não são suportados.

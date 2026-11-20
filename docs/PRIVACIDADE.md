@@ -1,6 +1,6 @@
 # Política de Privacidade — Baixaí
 
-*Última atualização: 19/11/2026. Versão do produto: 0.2.0.*
+*Última atualização: 20/11/2026. Versão do produto: 0.3.0.*
 
 O Baixaí é uma extensão do Chrome com um aplicativo auxiliar que roda **no seu computador**. Esta política descreve exatamente o que o produto faz com dados, de acordo com o comportamento implementado.
 
